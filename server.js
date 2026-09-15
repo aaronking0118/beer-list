@@ -10,15 +10,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static frontend files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. Health Check Route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// 2. Get Distinct Beer Styles (for UI Filter Dropdown)
 app.get('/api/styles', async (req, res) => {
   try {
     const result = await db.query(
@@ -27,7 +24,6 @@ app.get('/api/styles', async (req, res) => {
     
     let styles = result.rows.map(row => row.beer_style).filter(Boolean);
 
-    // If database styles are mostly null/empty, provide standard fallback styles for filtering
     if (styles.length === 0) {
       styles = [
         "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
@@ -43,8 +39,7 @@ app.get('/api/styles', async (req, res) => {
   }
 });
 
-// 3. Get All Beers (with pagination, search, and style filtering)
-// Example: /api/beers?search=IPA&style=Stout&page=1&limit=18
+// Get All Beers (with pagination, search, style filter, and sorting)
 app.get('/api/beers', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -52,6 +47,18 @@ app.get('/api/beers', async (req, res) => {
     const offset = (page - 1) * limit;
     const search = req.query.search || '';
     const style = req.query.style || '';
+    const sortBy = req.query.sortBy || 'beer_number';
+    const order = (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    // Map allowed sort keys to prevent SQL injection
+    const allowedSortFields = {
+      'beer_number': 'beer_number',
+      'rank': 'rank',
+      'abv': 'abv',
+      'beer_name': 'beer_name'
+    };
+
+    const sortColumn = allowedSortFields[sortBy] || 'beer_number';
 
     let whereClauses = [];
     let params = [];
@@ -71,16 +78,15 @@ app.get('/api/beers', async (req, res) => {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Fetch total count for pagination metadata
     const countQuery = `SELECT COUNT(*) FROM beers ${whereSql}`;
     const countResult = await db.query(countQuery, params);
     const totalBeers = parseInt(countResult.rows[0].count);
 
-    // Fetch paginated results
+    // Handle null values in sorting (e.g., beers without ranks sorted to the bottom)
     const dataQuery = `
       SELECT * FROM beers 
       ${whereSql} 
-      ORDER BY id ASC 
+      ORDER BY ${sortColumn} ${order} NULLS LAST, id ASC 
       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
     `;
     const dataResult = await db.query(dataQuery, [...params, limit, offset]);
@@ -100,7 +106,6 @@ app.get('/api/beers', async (req, res) => {
   }
 });
 
-// 4. Get Single Beer by ID
 app.get('/api/beers/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -117,7 +122,6 @@ app.get('/api/beers/:id', async (req, res) => {
   }
 });
 
-// Fallback: Serve index.html for non-API requests (frontend SPA routing)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
