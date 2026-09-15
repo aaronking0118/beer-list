@@ -23,6 +23,7 @@ let breweriesData = []; // Cache brewery list with State/Country info
 async function fetchBeers() {
   try {
     const res = await fetch('/api/beers');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     beersData = await res.json();
     populateStyleFilter(beersData);
     applyFilters();
@@ -64,7 +65,7 @@ function applyFilters() {
     if (sortBy === 'brewery') return (a.brewery_name || '').localeCompare(b.brewery_name || '');
     if (sortBy === 'rank-high') return (parseFloat(b.rank) || 0) - (parseFloat(a.rank) || 0);
     if (sortBy === 'rank-low') return (parseFloat(a.rank) || 0) - (parseFloat(b.rank) || 0);
-    return b.id - a.id; // 'newest' default
+    return (b.id || 0) - (a.id || 0); // 'newest' default
   });
 
   renderBeers(filtered);
@@ -74,6 +75,7 @@ function applyFilters() {
 async function loadBrewerySuggestions() {
   try {
     const res = await fetch('/api/breweries');
+    if (!res.ok) return;
     breweriesData = await res.json();
 
     const addDatalist = document.getElementById('brewery-list');
@@ -124,14 +126,50 @@ function renderBeers(beers) {
       <p class="brewery">${beer.brewery_name}</p>
       <p><strong>Style:</strong> ${beer.style || 'N/A'}</p>
       <p><strong>Rank:</strong> ${beer.rank || 'N/A'}</p>
-      <button class="btn btn-sm btn-primary" onclick='openEditModal(${JSON.stringify(beer)})'>Edit</button>
+      <button class="btn btn-sm btn-primary" onclick='openEditModal(${JSON.stringify(beer).replace(/'/g, "&#39;")})'>Edit</button>
     </div>
   `).join('');
+}
+
+// Notification Helper
+function showNotification(message, type = 'success', modalId = 'add-modal') {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  
+  let notifEl = modal.querySelector('.form-notification');
+  if (!notifEl) {
+    notifEl = document.createElement('div');
+    notifEl.className = 'form-notification';
+    const content = modal.querySelector('.modal-content');
+    content.insertBefore(notifEl, content.children[2]); // Insert below title
+  }
+  
+  notifEl.style.cssText = `
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    background-color: ${type === 'success' ? '#00A3A3' : '#E53E3E'};
+    color: #071322;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  `;
+  notifEl.textContent = message;
+  notifEl.style.display = 'block';
+
+  if (type === 'success') {
+    setTimeout(() => {
+      notifEl.style.display = 'none';
+    }, 4000);
+  }
 }
 
 // Modal controls
 function openAddModal() {
   document.getElementById('add-beer-form').reset();
+  const notif = document.querySelector('#add-modal .form-notification');
+  if (notif) notif.style.display = 'none';
   document.getElementById('add-modal').style.display = 'flex';
 }
 
@@ -140,6 +178,9 @@ function closeAddModal() {
 }
 
 function openEditModal(beer) {
+  const notif = document.querySelector('#edit-modal .form-notification');
+  if (notif) notif.style.display = 'none';
+
   document.getElementById('edit-beer-id').value = beer.id;
   document.getElementById('edit-beer-name').value = beer.beer_name || '';
   document.getElementById('edit-brewery-name').value = beer.brewery_name || '';
@@ -167,18 +208,23 @@ function closeEditModal() {
 async function handleAddBeer(e) {
   e.preventDefault();
 
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalBtnText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Saving...';
+
   const payload = {
-    beer_name: document.getElementById('add-beer-name').value,
-    brewery_name: document.getElementById('add-brewery-name').value,
-    style: document.getElementById('add-style').value,
-    rank: document.getElementById('add-rank').value,
-    abv: document.getElementById('add-abv').value,
-    ibu: document.getElementById('add-ibu').value,
-    srm: document.getElementById('add-srm').value,
-    state: document.getElementById('add-state').value,
-    country: document.getElementById('add-country').value,
-    date: document.getElementById('add-date').value,
-    location: document.getElementById('add-location').value
+    beer_name: document.getElementById('add-beer-name').value.trim(),
+    brewery_name: document.getElementById('add-brewery-name').value.trim(),
+    style: document.getElementById('add-style').value.trim(),
+    rank: document.getElementById('add-rank').value ? parseFloat(document.getElementById('add-rank').value) : null,
+    abv: document.getElementById('add-abv').value ? parseFloat(document.getElementById('add-abv').value) : null,
+    ibu: document.getElementById('add-ibu').value ? parseInt(document.getElementById('add-ibu').value) : null,
+    srm: document.getElementById('add-srm').value ? parseInt(document.getElementById('add-srm').value) : null,
+    state: document.getElementById('add-state').value.trim(),
+    country: document.getElementById('add-country').value.trim(),
+    date: document.getElementById('add-date').value || null,
+    location: document.getElementById('add-location').value.trim()
   };
 
   try {
@@ -189,34 +235,62 @@ async function handleAddBeer(e) {
     });
 
     if (res.ok) {
-      closeAddModal();
-      fetchBeers();
-      loadBrewerySuggestions();
+      const addedBeer = await res.json().catch(() => ({}));
+      
+      // Refresh local beer data
+      await fetchBeers();
+      await loadBrewerySuggestions();
+
+      // Determine beer entry number
+      const beerNumber = addedBeer.id || beersData.length;
+
+      // Show success notification in modal
+      showNotification(`Beer #${beerNumber} was added successfully!`, 'success', 'add-modal');
+      
+      // Reset form fields
+      document.getElementById('add-beer-form').reset();
+
+      // Close modal after 1.5 seconds so user sees the message
+      setTimeout(() => {
+        closeAddModal();
+      }, 1500);
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      showNotification(`Failed to save beer: ${errorData.message || res.statusText}`, 'error', 'add-modal');
     }
   } catch (err) {
     console.error('Error adding beer:', err);
+    showNotification(`Error saving beer: ${err.message}`, 'error', 'add-modal');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalBtnText;
   }
 }
 
 async function handleEditBeer(e) {
   e.preventDefault();
 
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalBtnText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Updating...';
+
   const id = document.getElementById('edit-beer-id').value;
   const payload = {
-    beer_name: document.getElementById('edit-beer-name').value,
-    brewery_name: document.getElementById('edit-brewery-name').value,
-    style: document.getElementById('edit-style').value,
-    rank: document.getElementById('edit-rank').value,
-    abv: document.getElementById('edit-abv').value,
-    ibu: document.getElementById('edit-ibu').value,
-    srm: document.getElementById('edit-srm').value,
-    state: document.getElementById('edit-state').value,
-    country: document.getElementById('edit-country').value,
-    owned_by: document.getElementById('edit-owned-by').value,
-    date: document.getElementById('edit-date').value,
-    location: document.getElementById('edit-location').value,
-    aka: document.getElementById('edit-aka').value,
-    collaborators: document.getElementById('edit-collaborators').value
+    beer_name: document.getElementById('edit-beer-name').value.trim(),
+    brewery_name: document.getElementById('edit-brewery-name').value.trim(),
+    style: document.getElementById('edit-style').value.trim(),
+    rank: document.getElementById('edit-rank').value ? parseFloat(document.getElementById('edit-rank').value) : null,
+    abv: document.getElementById('edit-abv').value ? parseFloat(document.getElementById('edit-abv').value) : null,
+    ibu: document.getElementById('edit-ibu').value ? parseInt(document.getElementById('edit-ibu').value) : null,
+    srm: document.getElementById('edit-srm').value ? parseInt(document.getElementById('edit-srm').value) : null,
+    state: document.getElementById('edit-state').value.trim(),
+    country: document.getElementById('edit-country').value.trim(),
+    owned_by: document.getElementById('edit-owned-by').value.trim(),
+    date: document.getElementById('edit-date').value || null,
+    location: document.getElementById('edit-location').value.trim(),
+    aka: document.getElementById('edit-aka').value.trim(),
+    collaborators: document.getElementById('edit-collaborators').value.trim()
   };
 
   try {
@@ -227,11 +301,22 @@ async function handleEditBeer(e) {
     });
 
     if (res.ok) {
-      closeEditModal();
-      fetchBeers();
-      loadBrewerySuggestions();
+      showNotification(`Beer #${id} updated successfully!`, 'success', 'edit-modal');
+      await fetchBeers();
+      await loadBrewerySuggestions();
+
+      setTimeout(() => {
+        closeEditModal();
+      }, 1200);
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      showNotification(`Failed to update beer: ${errorData.message || res.statusText}`, 'error', 'edit-modal');
     }
   } catch (err) {
     console.error('Error updating beer:', err);
+    showNotification(`Error updating beer: ${err.message}`, 'error', 'edit-modal');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalBtnText;
   }
 }
