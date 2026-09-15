@@ -156,7 +156,7 @@ function getBeerLiquidColor(beer) {
   return '#111111';
 }
 
-// Maps style to one of your 6 glassware types
+// Maps style to glassware type
 function getGlasswareTypeForStyle(styleName) {
   if (!styleName) return 'pint';
   const lower = styleName.toLowerCase();
@@ -176,10 +176,10 @@ function getGlasswareTypeForStyle(styleName) {
   if (lower.includes('märzen') || lower.includes('oktoberfest') || lower.includes('schwarzbier') || lower.includes('amber')) {
     return 'stein';
   }
-  return 'pint'; // Default fallback for IPAs, Pale Ales, Lagers, etc.
+  return 'pint';
 }
 
-// Renders the precise SVG template for each glassware style with dynamic color-fill
+// Renders standardized, perfectly proportioned SVG glassware graphics
 function renderGlasswareSvg(beer) {
   const liquidColor = getBeerLiquidColor(beer);
   const styleName = beer.style || beer.beer_style || 'N/A';
@@ -189,45 +189,45 @@ function renderGlasswareSvg(beer) {
 
   if (type === 'weizen') {
     svgPaths = `
-      <path fill="${liquidColor}" d="M7.2 7.5h9.6l-1.2 12a1.2 1.2 0 0 1-1.2 1.1H9.6a1.2 1.2 0 0 1-1.2-1.1L7.2 7.5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M6.5 5.5h11l-1.5 14.5a2 2 0 0 1-2 1.8h-5a2 2 0 0 1-2-1.8L6.5 5.5zm-2-2h15v2h-15v-2zm3.5 18h8v1.5h-8v-1.5z" />
-      <path fill="#ffffff" opacity="0.85" d="M7 6h10v1.2H7z" />
+      <path fill="${liquidColor}" d="M7.5 5.5h9l-1 14.2a1.2 1.2 0 0 1-1.2 1.1h-4.6a1.2 1.2 0 0 1-1.2-1.1L7.5 5.5z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M6.8 3.8h10.4l-1.3 16.2a1.8 1.8 0 0 1-1.8 1.6H9.9a1.8 1.8 0 0 1-1.8-1.6L6.8 3.8zm-2-1.8h14.4v2H4.8V2zm3.8 19.2h7.8v1.6H8.6V21.4z" />
+      <path fill="#ffffff" opacity="0.85" d="M7.4 4.5h9.2v1.2H7.4z" />
     `;
   } else if (type === 'tulip') {
     svgPaths = `
-      <path fill="${liquidColor}" d="M7.5 7.8c0-2.2 1.8-3.5 4.5-3.5s4.5 1.3 4.5 3.5c0 2-1 3.5-2 5.2l-1.2 8.2h-2.6l-1.2-8.2c-1-1.7-2-3.2-2-5.2z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M7.5 4c0-1.1.9-2 2-2h5c1.1 0 2 .9 2 2 0 1.5-.8 2.8-1.5 4-1.2 2-1.8 3.5-1.8 5.8v6.2h-3.4v-6.2c0-2.3-.6-3.8-1.8-5.8-.7-1.2-1.5-2.5-1.5-4zM6 21h12v1.5H6V21z" />
-      <path fill="#ffffff" opacity="0.85" d="M8.2 4.2h7.6v1H8.2z" />
+      <path fill="${liquidColor}" d="M7.6 7.2c0-2 1.9-3.2 4.4-3.2s4.4 1.2 4.4 3.2c0 1.8-1 3.2-1.9 4.8l-1.1 8h-2.8l-1.1-8c-.9-1.6-1.9-3-1.9-4.8z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M7.6 3.6c0-1.1.9-2 2-2h4.8c1.1 0 2 .9 2 2 0 1.4-.7 2.6-1.4 3.8-1.1 1.8-1.7 3.2-1.7 5.4v7.2h-3.6v-7.2c0-2.2-.6-3.6-1.7-5.4-.7-1.2-1.4-2.4-1.4-3.8zM6 21.2h12v1.6H6v-1.6z" />
+      <path fill="#ffffff" opacity="0.85" d="M8.2 4h7.6v1H8.2z" />
     `;
   } else if (type === 'stein') {
     svgPaths = `
-      <path fill="${liquidColor}" d="M6.5 6.5h11l-0.8 13.5a1 1 0 0 1-1 1h-7.4a1 1 0 0 1-1-1L6.5 6.5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M5.5 5h13l-1 15.5a1.5 1.5 0 0 1-1.5 1.4h-8a1.5 1.5 0 0 1-1.5-1.4L5.5 5zm-2-2h17v2h-17V3zm4.5 3v14.5m4-14.5v14.5m4-14.5v14.5M5.5 21h13v1.5h-13V21zm12.5-11c2 0 3.5 1 3.5 3s-1.5 3-3.5 3" />
-      <path fill="#ffffff" opacity="0.85" d="M6 5.5h12v1.2H6z" />
+      <path fill="${liquidColor}" d="M6.8 5.8h10.4l-0.8 14.2a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1L6.8 5.8z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5.8 4.2h12.4l-1 15.8a1.5 1.5 0 0 1-1.5 1.4H8.3a1.5 1.5 0 0 1-1.5-1.4L5.8 4.2zm-2-1.8h16.4v2H3.8v-2zm3.8 2.6v15m4-15v15m4-15v15M5.2 21.4h13.6v1.6H5.2v-1.6zm13-11.2c1.8 0 3.2 0.9 3.2 2.8s-1.4 2.8-3.2 2.8" />
+      <path fill="#ffffff" opacity="0.85" d="M6.2 5h11.6v1.2H6.2z" />
     `;
   } else if (type === 'snifter') {
     svgPaths = `
-      <path fill="${liquidColor}" d="M7 10h10a4.5 4.5 0 0 1-4.5 4.5h-1A4.5 4.5 0 0 1 7 10z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M8.5 6h7a5.5 5.5 0 0 1 5.5 5.5c0 3-2.5 5.5-5.5 5.5h-7C5.5 17 3 14.5 3 11.5A5.5 5.5 0 0 1 8.5 6zm-2-2h11v2h-11V4zm3.5 13h4v4h-4v-4zm-2 4h8v1.5h-8V21z" />
-      <path fill="#ffffff" opacity="0.85" d="M9 6.5h6v1H9z" />
+      <path fill="${liquidColor}" d="M7.2 9.5h9.6a4.4 4.4 0 0 1-4.8 4.4h-0.4a4.4 4.4 0 0 1-4.4-4.4z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M8.4 5.5h7.2a5.4 5.4 0 0 1 5.4 5.4c0 3-2.4 5.4-5.4 5.4h-7.2c-3 0-5.4-2.4-5.4-5.4a5.4 5.4 0 0 1 5.4-5.4zm-2-2h11.2v2H6.4v-2zm3.6 13.2h4v3.6h-4v-3.6zm-2 4.4h8v1.6h-8v-1.6z" />
+      <path fill="#ffffff" opacity="0.85" d="M8.8 6.2h6.4v1H8.8z" />
     `;
   } else if (type === 'flute') {
     svgPaths = `
-      <path fill="${liquidColor}" d="M8 5.5h8l-0.5 14.5H8.5L8 5.5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M7.5 4h9l-0.6 16.2a1 1 0 0 1-1 0.8h-5.8a1 1 0 0 1-1-0.8L7.5 4zm-2-2h13v2h-13V2zm4.5 18h5v2.5h-5V20z" />
-      <path fill="#ffffff" opacity="0.85" d="M8 4.5h8v1H8z" />
+      <path fill="${liquidColor}" d="M8 5.2h8l-0.4 14.5H8.4L8 5.2z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M7.4 3.8h9.2l-0.6 16.2a1 1 0 0 1-1 0.8H9a1 1 0 0 1-1-0.8L7.4 3.8zm-2-1.8h13.2v2H5.4v-2zm4.4 18.2h4.4v2.4H9.8v-2.4z" />
+      <path fill="#ffffff" opacity="0.85" d="M8 4.4h8v1H8z" />
     `;
   } else {
-    // Default standard Pint / Nonic glass
+    // Pint / Nonic
     svgPaths = `
-      <path fill="${liquidColor}" d="M6 7.5h12l-1.2 12.5a1.2 1.2 0 0 1-1.2 1.1H8.4a1.2 1.2 0 0 1-1.2-1.1L6 7.5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M5 5h14l-1.5 15a2 2 0 0 1-2 1.8H8.5a2 2 0 0 1-2-1.8L5 5zm-2-2h18v2H3V3zm3.5 18h11v1.5h-11V21z" />
-      <path fill="#ffffff" opacity="0.85" d="M5.5 5.8h13v1.2h-13z" />
+      <path fill="${liquidColor}" d="M6.5 5.8h11l-1.1 14.4a1.2 1.2 0 0 1-1.2 1.1h-6.4a1.2 1.2 0 0 1-1.2-1.1L6.5 5.8z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 4h13l-1.4 16a2 2 0 0 1-2 1.8H8.9a2 2 0 0 1-2-1.8L5.5 4zm-2-2h17v2H3.5V2zm3.4 19.2h10.2v1.6H6.9V21.4z" />
+      <path fill="#ffffff" opacity="0.85" d="M6 4.8h12v1.2H6z" />
     `;
   }
 
   return `
-    <svg class="glassware-icon" viewBox="0 0 24 24" width="30" height="30" style="shape-rendering: geometricPrecision; vertical-align: middle;" title="Style: ${escapeHtml(styleName)} | Glass: ${type} | SRM: ${beer.srm ?? 'N/A'}">
+    <svg class="glassware-icon" viewBox="0 0 24 24" width="30" height="30" style="shape-rendering: geometricPrecision; vertical-align: middle; flex-shrink: 0;" title="Style: ${escapeHtml(styleName)} | Glass: ${type} | SRM: ${beer.srm ?? 'N/A'}">
       ${svgPaths}
     </svg>
   `;
@@ -276,9 +276,9 @@ function createBeerCardHtml(beer) {
   return `
     <div class="beer-card" onclick="openDetailModal(${beer.id})">
       <span class="beer-badge">#${badgeNum}</span>
-      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.2rem;">
         ${glasswareSvg}
-        <h3 style="padding-right: 3rem; margin-bottom: 0;">${escapeHtml(beer.beer_name)}</h3>
+        <h3 style="padding-right: 3rem; margin-bottom: 0; line-height: 1.2;">${escapeHtml(beer.beer_name)}</h3>
       </div>
       <div class="brewery-title">${escapeHtml(beer.brewery_name)}</div>
       
