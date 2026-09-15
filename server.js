@@ -22,9 +22,21 @@ app.get('/api/health', (req, res) => {
 app.get('/api/styles', async (req, res) => {
   try {
     const result = await db.query(
-      "SELECT DISTINCT beer_style FROM beers WHERE beer_style IS NOT NULL AND beer_style != '' ORDER BY beer_style ASC"
+      "SELECT DISTINCT beer_style FROM beers WHERE beer_style IS NOT NULL AND TRIM(beer_style) != '' ORDER BY beer_style ASC LIMIT 100"
     );
-    res.json(result.rows.map(row => row.beer_style));
+    
+    let styles = result.rows.map(row => row.beer_style).filter(Boolean);
+
+    // If database styles are mostly null/empty, provide standard fallback styles for filtering
+    if (styles.length === 0) {
+      styles = [
+        "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
+        "Porter", "Ale", "Pale Ale", "Wheat Beer", "Radler", 
+        "Sour", "Saison", "Amber Ale"
+      ];
+    }
+
+    res.json(styles);
   } catch (err) {
     console.error('Error fetching styles', err);
     res.status(500).json({ error: 'Internal server error' });
