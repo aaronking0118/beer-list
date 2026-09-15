@@ -1,7 +1,6 @@
 let currentPage = 1;
 const limit = 18;
 
-// DOM Elements
 const beerGrid = document.getElementById('beerGrid');
 const searchInput = document.getElementById('searchInput');
 const styleSelect = document.getElementById('styleSelect');
@@ -12,7 +11,6 @@ const currentPageLabel = document.getElementById('currentPageLabel');
 const resultsCount = document.getElementById('resultsCount');
 const pageInfo = document.getElementById('pageInfo');
 
-// Dynamically populate style options into the dropdown
 async function loadStyles() {
   try {
     const res = await fetch('/api/styles');
@@ -28,7 +26,6 @@ async function loadStyles() {
   }
 }
 
-// Fetch beers with search and style filter options
 async function fetchBeers(page = 1, search = '', style = '') {
   beerGrid.innerHTML = `
     <div class="col-span-full text-center py-12 text-gray-400">
@@ -53,7 +50,6 @@ async function fetchBeers(page = 1, search = '', style = '') {
   }
 }
 
-// Render cards
 function renderBeers(beers) {
   if (!beers || beers.length === 0) {
     beerGrid.innerHTML = `
@@ -68,18 +64,17 @@ function renderBeers(beers) {
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-5 hover:border-amber-500/50 transition flex flex-col justify-between shadow-lg">
       <div>
         <div class="flex justify-between items-start mb-2">
-          <h2 class="text-xl font-bold text-white leading-tight">${beer.beer_name || beer.name || 'Unnamed Beer'}</h2>
+          <h2 class="text-xl font-bold text-white leading-tight">${beer.beer_name || 'Unnamed Beer'}</h2>
           ${beer.abv ? `<span class="text-xs bg-amber-500/20 text-amber-400 font-semibold px-2 py-1 rounded-md border border-amber-500/30">${beer.abv}% ABV</span>` : ''}
         </div>
-        <p class="text-amber-500 font-medium text-sm mb-3">${beer.brewery_name || beer.brewery || 'Unknown Brewery'}</p>
-        ${beer.beer_style || beer.style ? `<span class="inline-block bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded-full mb-3">${beer.beer_style || beer.style}</span>` : ''}
+        <p class="text-amber-500 font-medium text-sm mb-3">${beer.brewery_name || 'Unknown Brewery'}</p>
+        ${beer.beer_style ? `<span class="inline-block bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded-full mb-3">${beer.beer_style}</span>` : ''}
       </div>
       ${beer.rating ? `<div class="mt-4 pt-3 border-t border-gray-700/60 text-xs text-gray-400 flex justify-between"><span>Rating</span><span class="font-bold text-amber-400">⭐ ${beer.rating}</span></div>` : ''}
     </div>
   `).join('');
 }
 
-// Update pagination state
 function updatePagination(pagination) {
   currentPage = pagination.currentPage;
   currentPageLabel.textContent = currentPage;
@@ -90,7 +85,6 @@ function updatePagination(pagination) {
   nextPageBtn.disabled = currentPage >= pagination.totalPages;
 }
 
-// Event Listeners
 searchBtn.addEventListener('click', () => {
   currentPage = 1;
   fetchBeers(currentPage, searchInput.value, styleSelect.value);
@@ -118,6 +112,5 @@ nextPageBtn.addEventListener('click', () => {
   fetchBeers(currentPage + 1, searchInput.value, styleSelect.value);
 });
 
-// Initialize
 loadStyles();
 fetchBeers();
