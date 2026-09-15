@@ -85,6 +85,49 @@ function populateStyleFilter() {
   });
 }
 
+// Color gradient calculation for Rank (Red -> Yellow -> Green)
+function getRankColor(rank) {
+  if (rank === null || rank === undefined || isNaN(rank)) return '#8a99ad';
+  const clamped = Math.min(Math.max(Number(rank), 1), 5);
+  // Maps 1.0 -> 0deg (Red), 3.0 -> 60deg (Yellow), 5.0 -> 120deg (Green)
+  const hue = ((clamped - 1) / 4) * 120;
+  return `hsl(${hue}, 85%, 55%)`;
+}
+
+// Render 5-Star Rating Element
+function renderStarRating(rank) {
+  if (rank === null || rank === undefined || isNaN(rank)) return '<span style="color: #8a99ad;">N/A</span>';
+  
+  const numericRank = Number(rank);
+  const color = getRankColor(numericRank);
+  let starsHtml = '';
+
+  for (let i = 1; i <= 5; i++) {
+    let fillPercentage = 0;
+    if (numericRank >= i) {
+      fillPercentage = 100;
+    } else if (numericRank > i - 1) {
+      fillPercentage = (numericRank - (i - 1)) * 100;
+    }
+
+    starsHtml += `
+      <span class="star-wrapper" title="${numericRank.toFixed(1)} / 5.0">
+        <span class="star empty">&#9733;</span>
+        <span class="star fill" style="width: ${fillPercentage}%; color: ${color};">&#9733;</span>
+      </span>
+    `;
+  }
+
+  return `
+    <div class="star-rating-container">
+      ${starsHtml}
+      <span class="rank-value-text" style="color: ${color}; font-weight: 700; margin-left: 0.4rem;">
+        ${numericRank.toFixed(1)}
+      </span>
+    </div>
+  `;
+}
+
 function renderGrid() {
   const searchVal = searchInput.value.toLowerCase().trim();
   const selectedStyle = styleFilter.value;
@@ -122,7 +165,7 @@ function renderGrid() {
 function createBeerCardHtml(beer) {
   const badgeNum = beer.beer_number ?? beer.id ?? '';
   const displayStyle = beer.style || beer.beer_style || 'N/A';
-  const displayRank = beer.rank !== null && beer.rank !== undefined ? Number(beer.rank).toFixed(1) : 'N/A';
+  const starDisplay = renderStarRating(beer.rank);
 
   return `
     <div class="beer-card" onclick="openDetailModal(${beer.id})">
@@ -132,7 +175,9 @@ function createBeerCardHtml(beer) {
       
       <div class="card-meta">
         <p><strong>Style:</strong> ${escapeHtml(displayStyle)}</p>
-        <p><strong>Rank:</strong> ${displayRank}</p>
+        <div class="card-rank-row">
+          <strong>Rank:</strong> ${starDisplay}
+        </div>
         ${beer.abv ? `<p><strong>ABV:</strong> ${Number(beer.abv).toFixed(2)}%</p>` : ''}
         ${beer.location ? `<p><strong>Location:</strong> ${escapeHtml(beer.location)}</p>` : ''}
       </div>
@@ -156,7 +201,7 @@ function openDetailModal(id) {
     { label: 'Beer Name', value: beer.beer_name },
     { label: 'Brewery', value: beer.brewery_name },
     { label: 'Style', value: beer.style || beer.beer_style },
-    { label: 'Rank', value: beer.rank !== null && beer.rank !== undefined ? Number(beer.rank).toFixed(1) : null },
+    { label: 'Rank', value: beer.rank !== null && beer.rank !== undefined ? `${renderStarRating(beer.rank)}` : null, isHtml: true },
     { label: 'ABV', value: beer.abv ? `${Number(beer.abv).toFixed(2)}%` : null },
     { label: 'IBU', value: beer.ibu },
     { label: 'SRM', value: beer.srm },
@@ -169,12 +214,18 @@ function openDetailModal(id) {
     { label: 'Database ID', value: beer.id }
   ];
 
-  detailBody.innerHTML = fields.map(f => `
-    <div class="detail-item">
-      <span>${escapeHtml(f.label)}</span>
-      <p>${f.value !== null && f.value !== undefined && String(f.value).trim() !== '' ? escapeHtml(String(f.value)) : '<em style="color:#5a6e85;">N/A</em>'}</p>
-    </div>
-  `).join('');
+  detailBody.innerHTML = fields.map(f => {
+    let valHtml = '<em style="color:#5a6e85;">N/A</em>';
+    if (f.value !== null && f.value !== undefined && String(f.value).trim() !== '') {
+      valHtml = f.isHtml ? f.value : escapeHtml(String(f.value));
+    }
+    return `
+      <div class="detail-item">
+        <span>${escapeHtml(f.label)}</span>
+        <p>${valHtml}</p>
+      </div>
+    `;
+  }).join('');
 
   detailEditBtn.onclick = () => {
     closeDetailModal();

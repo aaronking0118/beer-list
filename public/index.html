@@ -158,6 +158,39 @@
       color: var(--text-primary);
     }
 
+    .card-rank-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.3rem;
+    }
+
+    .star-rating-container {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .star-wrapper {
+      position: relative;
+      display: inline-block;
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .star.empty {
+      color: #1e2d40;
+    }
+
+    .star.fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
     .card-actions {
       margin-top: 1rem;
     }
