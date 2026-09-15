@@ -223,20 +223,23 @@ function getGlasswareTypeForStyle(styleName) {
   if (!styleName) return 'pint';
   const lower = styleName.toLowerCase();
   
-  if (lower.includes('stout') || lower.includes('porter') || lower.includes('barrel-aged') || lower.includes('barleywine')) {
+  if (lower.includes('stout') || lower.includes('porter') || lower.includes('barrel-aged') || lower.includes('barleywine') || lower.includes('imperial')) {
     return 'snifter';
   }
   if (lower.includes('wheat') || lower.includes('hefeweizen') || lower.includes('witbier')) {
     return 'weizen';
   }
-  if (lower.includes('pilsner') || lower.includes('bock') || lower.includes('helles') || lower.includes('kölsch')) {
+  if (lower.includes('pilsner') || lower.includes('helles') || lower.includes('kölsch') || lower.includes('lager - pale')) {
     return 'flute';
   }
-  if (lower.includes('belgian') || lower.includes('saison') || lower.includes('tripel') || lower.includes('quadrupel')) {
+  if (lower.includes('ipa') || lower.includes('belgian') || lower.includes('saison') || lower.includes('tripel') || lower.includes('quadrupel') || lower.includes('farmhouse')) {
     return 'tulip';
   }
-  if (lower.includes('märzen') || lower.includes('oktoberfest') || lower.includes('schwarzbier') || lower.includes('amber')) {
+  if (lower.includes('märzen') || lower.includes('oktoberfest') || lower.includes('schwarzbier') || lower.includes('amber') || lower.includes('bock')) {
     return 'stein';
+  }
+  if (lower.includes('sour') || lower.includes('berliner weisse') || lower.includes('gose') || lower.includes('wild ale')) {
+    return 'goblet';
   }
   return 'pint';
 }
@@ -249,36 +252,49 @@ function renderGlasswareSvg(beer) {
   let svgPaths = '';
 
   if (type === 'weizen') {
+    // Tall curvy hourglass wheat glass
     svgPaths = `
-      <path fill="${liquidColor}" d="M7.5 5h9l-1 22.5a1.2 1.2 0 0 1-1.2 1.2h-4.6a1.2 1.2 0 0 1-1.2-1.2L7.5 5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M6.8 3.2h10.4l-1.3 25.4a1.8 1.8 0 0 1-1.8 1.8H9.9a1.8 1.8 0 0 1-1.8-1.8L6.8 3.2zm-2-1.8h14.4v2H4.8V1.4zm3.8 28h7.8v2H8.6v-2z" />
-      <path fill="#ffffff" opacity="0.85" d="M7.4 4h9.2v1.2H7.4z" />
+      <path fill="${liquidColor}" d="M7.5 5h9l-0.8 11c-0.3 4.5-1.5 8-1.5 11.5a1.2 1.2 0 0 1-1.2 1.2h-3.5a1.2 1.2 0 0 1-1.2-1.2c0-3.5-1.2-7-1.5-11.5l-0.8-11z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M6.2 3.2h11.6l-1 11.5c-0.3 4.5-1.5 7.8-1.5 11.5a2 2 0 0 1-2 2h-4.2a2 2 0 0 1-2-2c0-3.7-1.2-7-1.5-11.5l-1-11.5zm-2-1.8h15.6v2H4.2V1.4zm3.6 28h8.4v2H7.8v-2z" />
+      <path fill="#ffffff" opacity="0.85" d="M6.8 4h10.4v1.2H6.8z" />
     `;
   } else if (type === 'tulip') {
+    // Stemmed tulip glass for IPAs & Belgians
     svgPaths = `
-      <path fill="${liquidColor}" d="M7.6 7c0-3.5 1.9-5.5 4.4-5.5s4.4 2 4.4 5.5c0 3-1 5.5-1.9 8.5l-1.1 12.5h-2.8l-1.1-12.5c-.9-3-1.9-5.5-1.9-8.5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M7.6 3.2c0-1.8.9-3.2 2-3.2h4.8c1.1 0 2 1.4 2 3.2 0 2.2-.7 4.2-1.4 6.2-1.1 3.2-1.7 5.8-1.7 9.2v9.4h-3.6V18.6c0-3.4-.6-6-1.7-9.2-.7-2-1.4-4-1.4-6.2zM6 29.4h12v2H6v-2z" />
-      <path fill="#ffffff" opacity="0.85" d="M8.2 3.8h7.6v1H8.2z" />
+      <path fill="${liquidColor}" d="M8 7c0-3.2 1.8-4.8 4-4.8s4 1.6 4 4.8c0 2.8-1.2 4.8-2 7.8l-0.8 10h-2.4l-0.8-10c-0.8-3-2-5-2-7.8z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M8 3.5c0-2 1-3.5 4-3.5s4 1.5 4 3.5c0 2.5-1 4.5-1.8 7.2-0.9 3.2-1.4 5.5-1.4 8.8v8.5h-1.6V19.5c0-3.3-.5-5.6-1.4-8.8C9 8 8 6 8 3.5zm-2 26h12v2H6v-2z" />
+      <path fill="#ffffff" opacity="0.85" d="M8.8 4.2h6.4v1H8.8z" />
+    `;
+  } else if (type === 'goblet') {
+    // Wide chalice/goblet for sours & wild ales
+    svgPaths = `
+      <path fill="${liquidColor}" d="M6 7h12l-1 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14l-1.2 16a2.5 2.5 0 0 1-2.5 2.5H8.7a2.5 2.5 0 0 1-2.5-2.5L5 5.5zm-1.5-2h17v2h-17v-2zm5.5 18.5h5v6h-5v-6zm-2 6h9v2h-9v-2z" />
+      <path fill="#ffffff" opacity="0.85" d="M5.8 6.5h12.4v1.2H5.8z" />
     `;
   } else if (type === 'stein') {
+    // Handled beer mug / stein
     svgPaths = `
       <path fill="${liquidColor}" d="M6.8 5.5h10.4l-0.8 22.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1L6.8 5.5z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5.8 3.8h12.4l-1 25.5a1.5 1.5 0 0 1-1.5 1.4H8.3a1.5 1.5 0 0 1-1.5-1.4L5.8 3.8zm-2-1.8h16.4v2H3.8v-2zm3.8 3.5v23.5m4-23.5v23.5m4-23.5v23.5M5.2 30.7h13.6v2H5.2v-2zm13-16c1.8 0 3.2 1.4 3.2 3.6s-1.4 3.6-3.2 3.6" />
       <path fill="#ffffff" opacity="0.85" d="M6.2 4.6h11.6v1.2H6.2z" />
     `;
   } else if (type === 'snifter') {
+    // Bulbous brandy/stout snifter
     svgPaths = `
-      <path fill="${liquidColor}" d="M7.2 10.5h9.6a4.8 4.8 0 0 1-4.8 4.8h-0.4a4.8 4.8 0 0 1-4.4-4.8z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M8.4 5.5h7.2a6 6 0 0 1 6 6c0 3.8-3 6.8-6 6.8h-7.2c-3 0-6-3-6-6.8a6 6 0 0 1 6-6zm-2-2h11.2v2H6.4v-2zm3.6 15.8h4v8.5h-4v-8.5zm-2 9.5h8v2h-8v-2z" />
-      <path fill="#ffffff" opacity="0.85" d="M8.8 6.4h6.4v1H8.8z" />
+      <path fill="${liquidColor}" d="M7 11h10a5 5 0 0 1-5 5 5 5 0 0 1-5-5z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M8 5h8a6.5 6.5 0 0 1 6.5 6.5C22.5 15.5 19 19 12 19s-10.5-3.5-10.5-7.5A6.5 6.5 0 0 1 8 5zm-2-2h12v2H6V3zm6 14v8h-3v2h8v-2h-5v-8z" />
+      <path fill="#ffffff" opacity="0.85" d="M8.5 6h7v1h-7z" />
     `;
   } else if (type === 'flute') {
+    // Tall slender Pilsner flute
     svgPaths = `
-      <path fill="${liquidColor}" d="M8.2 5h7.6l-0.4 23.5H8.6L8.2 5z" opacity="0.9" />
-      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M7.6 3.5h8.8l-0.6 25.5a1 1 0 0 1-1 1H9.2a1 1 0 0 1-1-1L7.6 3.5zm-2-1.8h12.8v2H5.6v-2zm4.4 27h4v2.5H10v-2.5z" />
-      <path fill="#ffffff" opacity="0.85" d="M8.2 4.2h7.6v1H8.2z" />
+      <path fill="${liquidColor}" d="M8.5 4h7l-0.8 24.5a1 1 0 0 1-1 1h-3.4a1 1 0 0 1-1-1L8.5 4z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M7.8 2.5h8.4l-0.9 26a1.5 1.5 0 0 1-1.5 1.5h-3.6a1.5 1.5 0 0 1-1.5-1.5L7.8 2.5zm-2-1.8h12.4v2H5.8V0.7zm3.2 28.5h6v2.5h-6v-2.5z" />
+      <path fill="#ffffff" opacity="0.85" d="M8.5 3.2h7v1h-7z" />
     `;
   } else {
+    // Standard Nonic Pint Glass
     svgPaths = `
       <path fill="${liquidColor}" d="M6.5 5.5h11l-1.1 23a1.2 1.2 0 0 1-1.2 1.2h-6.4a1.2 1.2 0 0 1-1.2-1.2L6.5 5.5z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 3.5h13l-1.4 25.5a2 2 0 0 1-2 1.8H8.9a2 2 0 0 1-2-1.8L5.5 3.5zm-2-2h17v2H3.5V1.5zm3.4 28.5h10.2v2H6.9v-2z" />
