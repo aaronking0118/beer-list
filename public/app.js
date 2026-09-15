@@ -1,9 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
   fetchBeers();
   loadBrewerySuggestions();
+
+  // Attach auto-complete listeners for brewery fields
+  const addBreweryInput = document.getElementById('add-brewery-name');
+  if (addBreweryInput) {
+    addBreweryInput.addEventListener('input', handleBrewerySelectAdd);
+    addBreweryInput.addEventListener('change', handleBrewerySelectAdd);
+  }
+
+  const editBreweryInput = document.getElementById('edit-brewery-name');
+  if (editBreweryInput) {
+    editBreweryInput.addEventListener('input', handleBrewerySelectEdit);
+    editBreweryInput.addEventListener('change', handleBrewerySelectEdit);
+  }
 });
 
 let beersData = [];
+let breweriesData = []; // Cache brewery list with State/Country info
 
 // Fetch and render all beers
 async function fetchBeers() {
@@ -56,20 +70,41 @@ function applyFilters() {
   renderBeers(filtered);
 }
 
-// Populate datalist dropdowns for brewery suggestions
+// Fetch breweries and store metadata
 async function loadBrewerySuggestions() {
   try {
     const res = await fetch('/api/breweries');
-    const breweries = await res.json();
+    breweriesData = await res.json();
 
     const addDatalist = document.getElementById('brewery-list');
     const editDatalist = document.getElementById('brewery-list-edit');
 
-    const optionsHtml = breweries.map(b => `<option value="${b.brewery_name}"></option>`).join('');
+    const optionsHtml = breweriesData.map(b => `<option value="${b.brewery_name}"></option>`).join('');
     if (addDatalist) addDatalist.innerHTML = optionsHtml;
     if (editDatalist) editDatalist.innerHTML = optionsHtml;
   } catch (err) {
     console.error('Error loading breweries:', err);
+  }
+}
+
+// Auto-fill State and Country when typing/selecting existing Brewery (Add Form)
+function handleBrewerySelectAdd(e) {
+  const val = e.target.value.trim().toLowerCase();
+  const found = breweriesData.find(b => (b.brewery_name || '').toLowerCase() === val);
+  if (found) {
+    if (found.state) document.getElementById('add-state').value = found.state;
+    if (found.country) document.getElementById('add-country').value = found.country;
+  }
+}
+
+// Auto-fill State, Country, and Owned By when typing/selecting existing Brewery (Edit Form)
+function handleBrewerySelectEdit(e) {
+  const val = e.target.value.trim().toLowerCase();
+  const found = breweriesData.find(b => (b.brewery_name || '').toLowerCase() === val);
+  if (found) {
+    if (found.state) document.getElementById('edit-state').value = found.state;
+    if (found.country) document.getElementById('edit-country').value = found.country;
+    if (found.owned_by) document.getElementById('edit-owned-by').value = found.owned_by;
   }
 }
 
@@ -79,7 +114,7 @@ function renderBeers(beers) {
   if (!container) return;
 
   if (beers.length === 0) {
-    container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px 0;">No beers found matching criteria.</p>`;
+    container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #94A3B8; padding: 40px 0;">No beers found matching criteria.</p>`;
     return;
   }
 
