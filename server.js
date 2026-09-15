@@ -20,7 +20,7 @@ const sanitizeDate = (val) => (val && String(val).trim() !== '' ? val : null);
 app.get('/api/beers', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT *, beer_style AS style, consumption_date AS date FROM beers ORDER BY id DESC'
+      'SELECT *, beer_style AS style, consumption_date AS date, aka_beer_name AS aka FROM beers ORDER BY id DESC'
     );
     res.json(rows);
   } catch (err) {
@@ -34,7 +34,7 @@ app.get('/api/breweries', async (req, res) => {
   try {
     const query = `
       SELECT DISTINCT ON (LOWER(TRIM(brewery_name))) 
-        brewery_name, state, country, owned_by 
+        brewery_name, state, country 
       FROM beers 
       WHERE brewery_name IS NOT NULL AND TRIM(brewery_name) != '' 
       ORDER BY LOWER(TRIM(brewery_name));
@@ -63,7 +63,7 @@ app.post('/api/beers', async (req, res) => {
       beer_name, brewery_name, beer_style, rank, abv,
       ibu, srm, state, country, consumption_date, location
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *, beer_style AS style, consumption_date AS date;
+    RETURNING *, beer_style AS style, consumption_date AS date, aka_beer_name AS aka;
   `;
 
   const values = [
@@ -89,13 +89,12 @@ app.post('/api/beers', async (req, res) => {
   }
 });
 
-// PUT Edit existing beer
+// PUT Edit existing beer (mapped to aka_beer_name)
 app.put('/api/beers/:id', async (req, res) => {
   const { id } = req.params;
   const {
     beer_name, brewery_name, style, rank, abv,
-    ibu, srm, state, country, owned_by, date,
-    location, aka, collaborators
+    ibu, srm, state, country, date, location, aka
   } = req.body || {};
 
   if (!beer_name || !brewery_name) {
@@ -113,13 +112,11 @@ app.put('/api/beers/:id', async (req, res) => {
       srm = $7,
       state = $8,
       country = $9,
-      owned_by = $10,
-      consumption_date = $11,
-      location = $12,
-      aka = $13,
-      collaborators = $14
-    WHERE id = $15
-    RETURNING *, beer_style AS style, consumption_date AS date;
+      consumption_date = $10,
+      location = $11,
+      aka_beer_name = $12
+    WHERE id = $13
+    RETURNING *, beer_style AS style, consumption_date AS date, aka_beer_name AS aka;
   `;
 
   const values = [
@@ -132,11 +129,9 @@ app.put('/api/beers/:id', async (req, res) => {
     sanitizeNum(srm),
     sanitizeStr(state),
     sanitizeStr(country),
-    sanitizeStr(owned_by),
     sanitizeDate(date),
     sanitizeStr(location),
     sanitizeStr(aka),
-    sanitizeStr(collaborators),
     id
   ];
 
