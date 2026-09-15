@@ -93,9 +93,11 @@
     }
     .beer-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.5rem;
     }
+    
+    /* Beer Card & Badge Styles */
     .beer-card {
       background: #111827;
       border: 1px solid #1f2937;
@@ -103,44 +105,72 @@
       padding: 1.2rem;
       display: flex;
       flex-direction: column;
-      gap: 0.8rem;
+      position: relative;
+      cursor: pointer;
     }
-    .beer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-    .beer-name {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: #f7fafc;
-      margin: 0;
-    }
-    .brewery-name {
-      font-size: 0.9rem;
-      color: #9ca3af;
-      margin: 0;
-    }
-    .badge {
+    .beer-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
       background: #1f2937;
       color: #60a5fa;
-      padding: 0.2rem 0.5rem;
+      padding: 0.2rem 0.6rem;
       border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 500;
+      font-size: 0.8rem;
+      font-weight: 600;
     }
-    .beer-details {
-      font-size: 0.85rem;
+    .card-meta {
+      margin-top: 0.6rem;
+      font-size: 0.9rem;
       color: #cbd5e1;
       display: flex;
-      gap: 1rem;
+      flex-direction: column;
+      gap: 0.4rem;
     }
-    .beer-actions {
+    .card-meta p {
+      margin: 0;
+    }
+    .card-rank-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 0.5rem;
-      margin-top: auto;
+      margin-top: 1rem;
     }
+    .btn-edit {
+      background: #374151;
+      color: white;
+      border: none;
+      padding: 0.35rem 0.9rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-edit:hover {
+      background: #4b5563;
+    }
+
+    /* Star Rating Fixes */
+    .star-wrapper {
+      position: relative;
+      display: inline-block;
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .star.empty {
+      color: #4a5568;
+    }
+    .star.fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
     /* Modal styles */
     .modal {
       display: none;
