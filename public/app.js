@@ -41,6 +41,7 @@ async function fetchBeers() {
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     beers = await res.json();
     populateStyleFilter();
+    updateStats();
     renderGrid();
   } catch (err) {
     console.error('Error fetching beers:', err);
@@ -94,6 +95,28 @@ function populateStyleFilter() {
     opt.textContent = style;
     styleFilter.appendChild(opt);
   });
+}
+
+function updateStats() {
+  const totalBeersEl = document.getElementById('statTotalBeers');
+  const totalBreweriesEl = document.getElementById('statTotalBreweries');
+  const avgRatingEl = document.getElementById('statAvgRating');
+
+  if (!totalBeersEl) return;
+
+  const totalBeers = beers.length;
+  const uniqueBreweries = new Set(
+    beers.map(b => (b.brewery_name || '').trim().toLowerCase()).filter(Boolean)
+  ).size;
+
+  const ratedBeers = beers.filter(b => b.rank !== null && b.rank !== undefined && !isNaN(b.rank));
+  const avgRating = ratedBeers.length > 0 
+    ? (ratedBeers.reduce((sum, b) => sum + Number(b.rank), 0) / ratedBeers.length).toFixed(1) 
+    : '0.0';
+
+  totalBeersEl.textContent = totalBeers;
+  totalBreweriesEl.textContent = uniqueBreweries;
+  avgRatingEl.textContent = avgRating;
 }
 
 function getRankColor(rank) {
