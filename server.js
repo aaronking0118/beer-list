@@ -11,12 +11,33 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static frontend files from 'public' directory
+// Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
+});
+
+// Get Unique Breweries (With Default State, Country, and Owned By)
+app.get('/api/breweries', async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT ON (LOWER(TRIM(brewery_name)))
+        brewery_name,
+        state,
+        country,
+        owned_by
+      FROM beers
+      WHERE brewery_name IS NOT NULL AND TRIM(brewery_name) != ''
+      ORDER BY LOWER(TRIM(brewery_name)) ASC;
+    `;
+    const result = await db.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching breweries list:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Get Unique Beer Styles Dropdown Options
@@ -154,7 +175,6 @@ app.post('/api/beers', async (req, res) => {
       return res.status(400).json({ error: 'Beer name and brewery name are required.' });
     }
 
-    // Duplicate Check: Check if exact beer name & brewery already exist
     const duplicateCheck = await db.query(
       'SELECT id, beer_number FROM beers WHERE LOWER(TRIM(beer_name)) = LOWER(TRIM($1)) AND LOWER(TRIM(brewery_name)) = LOWER(TRIM($2))',
       [beer_name, brewery_name]
@@ -166,7 +186,6 @@ app.post('/api/beers', async (req, res) => {
       });
     }
 
-    // Auto-assign MAX(beer_number) + 1
     const maxNumResult = await db.query('SELECT MAX(beer_number) AS max_num FROM beers');
     const maxNum = maxNumResult.rows[0].max_num;
     const nextBeerNumber = maxNum ? parseInt(maxNum, 10) + 1 : 1;

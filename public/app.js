@@ -1,5 +1,6 @@
 let currentPage = 1;
 const limit = 18;
+let breweriesMap = new Map();
 
 // DOM Elements
 const searchInput = document.getElementById('searchInput');
@@ -12,6 +13,18 @@ const pageInfo = document.getElementById('pageInfo');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const currentPageLabel = document.getElementById('currentPageLabel');
+const breweriesDatalist = document.getElementById('breweriesDatalist');
+
+// Form Brewery Inputs
+const addBreweryInput = document.getElementById('addBreweryInput');
+const addStateInput = document.getElementById('addStateInput');
+const addCountryInput = document.getElementById('addCountryInput');
+const addOwnedByInput = document.getElementById('addOwnedByInput');
+
+const editBreweryNameInput = document.getElementById('editBreweryName');
+const editStateInput = document.getElementById('editState');
+const editCountryInput = document.getElementById('editCountry');
+const editOwnedByInput = document.getElementById('editOwnedBy');
 
 // Modals
 const beerModal = document.getElementById('beerModal');
@@ -30,6 +43,7 @@ const editBeerForm = document.getElementById('editBeerForm');
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   fetchStyles();
+  fetchBreweries();
   fetchBeers();
 
   searchBtn.addEventListener('click', handleSearch);
@@ -51,13 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', () => editBeerModal.classList.add('hidden'));
   if (editBeerModal) editBeerModal.addEventListener('click', (e) => { if (e.target === editBeerModal) editBeerModal.classList.add('hidden'); });
   if (editBeerForm) editBeerForm.addEventListener('submit', handleEditBeerSubmit);
+
+  // Bind Brewery Auto-Fill Listeners
+  if (addBreweryInput) {
+    addBreweryInput.addEventListener('input', () => autoFillBreweryDetails(addBreweryInput.value, addStateInput, addCountryInput, addOwnedByInput));
+  }
+  if (editBreweryNameInput) {
+    editBreweryNameInput.addEventListener('input', () => autoFillBreweryDetails(editBreweryNameInput.value, editStateInput, editCountryInput, editOwnedByInput));
+  }
 });
 
 // Toast System
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
-  
   const bgColor = type === 'error' ? 'bg-red-900/90 border-red-500 text-red-200' : 'bg-emerald-900/90 border-emerald-500 text-emerald-200';
   
   toast.className = `pointer-events-auto border px-4 py-3 rounded-lg shadow-xl text-sm flex items-center gap-2 backdrop-blur transition transform duration-300 ${bgColor}`;
@@ -68,6 +89,41 @@ function showToast(message, type = 'success') {
     toast.classList.add('opacity-0');
     setTimeout(() => toast.remove(), 300);
   }, 4000);
+}
+
+// Fetch Breweries List for Auto-Suggest & Auto-Fill
+async function fetchBreweries() {
+  try {
+    const res = await fetch('/api/breweries');
+    const breweries = await res.json();
+    
+    breweriesDatalist.innerHTML = '';
+    breweriesMap.clear();
+
+    breweries.forEach(item => {
+      const option = document.createElement('option');
+      option.value = item.brewery_name;
+      breweriesDatalist.appendChild(option);
+      
+      breweriesMap.set(item.brewery_name.toLowerCase().trim(), {
+        state: item.state || '',
+        country: item.country || '',
+        owned_by: item.owned_by || ''
+      });
+    });
+  } catch (err) {
+    console.error('Failed to fetch breweries list:', err);
+  }
+}
+
+// Auto-fill State, Country, and Owned By when a brewery matches existing records
+function autoFillBreweryDetails(typedName, stateElem, countryElem, ownedByElem) {
+  const match = breweriesMap.get(typedName.toLowerCase().trim());
+  if (match) {
+    if (match.state) stateElem.value = match.state;
+    if (match.country) countryElem.value = match.country;
+    if (match.owned_by) ownedByElem.value = match.owned_by;
+  }
 }
 
 // Fetch Styles Dropdown
@@ -187,6 +243,7 @@ async function openBeerDetails(id) {
           <div><span class="block text-xs text-gray-400">IBU</span><span class="font-semibold text-gray-200">${beer.ibu || '—'}</span></div>
           <div><span class="block text-xs text-gray-400">SRM</span><span class="font-semibold text-gray-200">${beer.srm || '—'}</span></div>
           <div><span class="block text-xs text-gray-400">Location</span><span class="font-semibold text-gray-200">${beer.state ? `${beer.state}, ${beer.country || ''}` : (beer.country || '—')}</span></div>
+          ${beer.owned_by ? `<div class="col-span-full"><span class="block text-xs text-gray-400">Owned By</span><span class="font-semibold text-gray-200">${beer.owned_by}</span></div>` : ''}
         </div>
 
         <div class="pt-4 border-t border-gray-700 flex justify-end gap-3">
@@ -229,6 +286,7 @@ async function handleAddBeerSubmit(e) {
     addBeerModal.classList.add('hidden');
     showToast(`Successfully added "${result.beer_name}" as Beer #${result.beer_number}!`);
     
+    fetchBreweries(); // Refresh breweries list with any newly added brewery
     currentPage = 1;
     fetchBeers();
   } catch (err) {
@@ -251,6 +309,7 @@ function openEditModal(beer) {
   document.getElementById('editSrm').value = beer.srm || '';
   document.getElementById('editState').value = beer.state || '';
   document.getElementById('editCountry').value = beer.country || '';
+  document.getElementById('editOwnedBy').value = beer.owned_by || '';
   document.getElementById('editAka').value = beer.aka_beer_name || '';
 
   editBeerModal.classList.remove('hidden');
@@ -279,6 +338,7 @@ async function handleEditBeerSubmit(e) {
 
     editBeerModal.classList.add('hidden');
     showToast(`Successfully updated "${result.beer_name}"!`);
+    fetchBreweries();
     fetchBeers();
   } catch (err) {
     console.error('Error updating beer:', err);
