@@ -28,7 +28,6 @@ app.get('/api/styles', async (req, res) => {
     
     let styles = result.rows.map(row => row.beer_style).filter(Boolean);
 
-    // Fallback default styles if database has no records yet
     if (styles.length === 0) {
       styles = [
         "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
@@ -55,7 +54,6 @@ app.get('/api/beers', async (req, res) => {
     const sortBy = req.query.sortBy || 'brewery_beer_name';
     const order = (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    // Map allowed sorting keys to SQL ORDER BY clauses
     let sortClause = `brewery_name ${order}, beer_name ${order}`;
 
     if (sortBy === 'beer_number') {
@@ -70,7 +68,6 @@ app.get('/api/beers', async (req, res) => {
       sortClause = `brewery_name ${order}, beer_name ${order}`;
     }
 
-    // Build WHERE clause dynamic parameters
     let whereClauses = [];
     let params = [];
     let paramIdx = 1;
@@ -89,12 +86,10 @@ app.get('/api/beers', async (req, res) => {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Count Total Results for Pagination Metadata
     const countQuery = `SELECT COUNT(*) FROM beers ${whereSql}`;
     const countResult = await db.query(countQuery, params);
     const totalBeers = parseInt(countResult.rows[0].count, 10);
 
-    // Fetch Paginated & Sorted Dataset
     const dataQuery = `
       SELECT * FROM beers 
       ${whereSql} 
@@ -135,7 +130,7 @@ app.get('/api/beers/:id', async (req, res) => {
   }
 });
 
-// Create a New Beer Entry (Always auto-assigns next sequential beer_number)
+// Create a New Beer Entry (With Duplicate Check & Auto-Increment)
 app.post('/api/beers', async (req, res) => {
   try {
     const {
@@ -159,7 +154,19 @@ app.post('/api/beers', async (req, res) => {
       return res.status(400).json({ error: 'Beer name and brewery name are required.' });
     }
 
-    // Always calculate MAX(beer_number) + 1 sequentially
+    // Duplicate Check: Check if exact beer name & brewery already exist
+    const duplicateCheck = await db.query(
+      'SELECT id, beer_number FROM beers WHERE LOWER(TRIM(beer_name)) = LOWER(TRIM($1)) AND LOWER(TRIM(brewery_name)) = LOWER(TRIM($2))',
+      [beer_name, brewery_name]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(409).json({ 
+        error: `Duplicate Entry: "${beer_name}" by "${brewery_name}" already exists as Beer #${duplicateCheck.rows[0].beer_number}.` 
+      });
+    }
+
+    // Auto-assign MAX(beer_number) + 1
     const maxNumResult = await db.query('SELECT MAX(beer_number) AS max_num FROM beers');
     const maxNum = maxNumResult.rows[0].max_num;
     const nextBeerNumber = maxNum ? parseInt(maxNum, 10) + 1 : 1;
@@ -175,8 +182,8 @@ app.post('/api/beers', async (req, res) => {
     `;
 
     const values = [
-      beer_name,
-      brewery_name,
+      beer_name.trim(),
+      brewery_name.trim(),
       aka_beer_name || null,
       beer_style || null,
       abv && abv.toString().trim() !== '' ? parseFloat(abv) : null,
@@ -200,30 +207,71 @@ app.post('/api/beers', async (req, res) => {
   }
 });
 
-// Update an Existing Beer Entry by ID
+// Update Full Beer Entry by ID
 app.put('/api/beers/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let { beer_number } = req.body;
+    const {
+      beer_name,
+      brewery_name,
+      aka_beer_name,
+      beer_style,
+      abv,
+      ibu,
+      srm,
+      country,
+      state,
+      owned_by,
+      collaborators,
+      rank,
+      consumption_date,
+      location
+    } = req.body;
 
-    let parsedBeerNumber = (beer_number !== undefined && beer_number !== null && beer_number.toString().trim() !== '') 
-      ? parseInt(beer_number, 10) 
-      : null;
-
-    if (!parsedBeerNumber || isNaN(parsedBeerNumber)) {
-      const maxNumResult = await db.query('SELECT MAX(beer_number) AS max_num FROM beers');
-      const maxNum = maxNumResult.rows[0].max_num;
-      parsedBeerNumber = maxNum ? parseInt(maxNum, 10) + 1 : 1;
+    if (!beer_name || !brewery_name) {
+      return res.status(400).json({ error: 'Beer name and brewery name are required.' });
     }
 
     const query = `
       UPDATE beers 
-      SET beer_number = $1 
-      WHERE id = $2 
+      SET 
+        beer_name = $1, 
+        brewery_name = $2, 
+        aka_beer_name = $3, 
+        beer_style = $4, 
+        abv = $5, 
+        ibu = $6, 
+        srm = $7, 
+        country = $8, 
+        state = $9, 
+        owned_by = $10, 
+        collaborators = $11, 
+        rank = $12, 
+        consumption_date = $13, 
+        location = $14
+      WHERE id = $15 
       RETURNING *;
     `;
 
-    const result = await db.query(query, [parsedBeerNumber, id]);
+    const values = [
+      beer_name.trim(),
+      brewery_name.trim(),
+      aka_beer_name || null,
+      beer_style || null,
+      abv && abv.toString().trim() !== '' ? parseFloat(abv) : null,
+      ibu && ibu.toString().trim() !== '' ? parseInt(ibu, 10) : null,
+      srm && srm.toString().trim() !== '' ? parseInt(srm, 10) : null,
+      country || null,
+      state || null,
+      owned_by || null,
+      collaborators || null,
+      rank && rank.toString().trim() !== '' ? parseFloat(rank) : null,
+      consumption_date || null,
+      location || null,
+      id
+    ];
+
+    const result = await db.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Beer not found.' });
@@ -231,12 +279,29 @@ app.put('/api/beers/:id', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error updating beer number:', err);
+    console.error('Error updating beer:', err);
     res.status(500).json({ error: 'Failed to update beer entry.' });
   }
 });
 
-// Single Page App Fallback - compatible with path-to-regexp v8 / Express 5 syntax
+// Delete a Beer Entry by ID
+app.delete('/api/beers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query('DELETE FROM beers WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Beer not found.' });
+    }
+
+    res.json({ message: 'Beer deleted successfully', deletedBeer: result.rows[0] });
+  } catch (err) {
+    console.error('Error deleting beer:', err);
+    res.status(500).json({ error: 'Failed to delete beer entry.' });
+  }
+});
+
+// Single Page App Fallback
 app.get('{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

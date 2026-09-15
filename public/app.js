@@ -1,4 +1,3 @@
-// State management
 let currentPage = 1;
 const limit = 18;
 
@@ -14,92 +13,68 @@ const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const currentPageLabel = document.getElementById('currentPageLabel');
 
-// Detail Modal Elements
+// Modals
 const beerModal = document.getElementById('beerModal');
 const closeModal = document.getElementById('closeModal');
 const modalContent = document.getElementById('modalContent');
 
-// Add Beer Modal Elements
 const addBeerModal = document.getElementById('addBeerModal');
 const openAddBeerModalBtn = document.getElementById('openAddBeerModal');
 const closeAddModalBtn = document.getElementById('closeAddModal');
 const addBeerForm = document.getElementById('addBeerForm');
 
-// Initialize App
+const editBeerModal = document.getElementById('editBeerModal');
+const closeEditModalBtn = document.getElementById('closeEditModal');
+const editBeerForm = document.getElementById('editBeerForm');
+
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
   fetchStyles();
   fetchBeers();
 
-  // Event Listeners for Filters
   searchBtn.addEventListener('click', handleSearch);
-  
-  searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleSearch();
-  });
+  searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
+  styleSelect.addEventListener('change', () => { currentPage = 1; fetchBeers(); });
+  sortSelect.addEventListener('change', () => { currentPage = 1; fetchBeers(); });
 
-  styleSelect.addEventListener('change', () => {
-    currentPage = 1;
-    fetchBeers();
-  });
+  prevPageBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; fetchBeers(); } });
+  nextPageBtn.addEventListener('click', () => { currentPage++; fetchBeers(); });
 
-  sortSelect.addEventListener('change', () => {
-    currentPage = 1;
-    fetchBeers();
-  });
+  closeModal.addEventListener('click', () => beerModal.classList.add('hidden'));
+  beerModal.addEventListener('click', (e) => { if (e.target === beerModal) beerModal.classList.add('hidden'); });
 
-  // Pagination Controls
-  prevPageBtn.addEventListener('click', () => {
-    if (currentPage > 1) {
-      currentPage--;
-      fetchBeers();
-    }
-  });
+  if (openAddBeerModalBtn) openAddBeerModalBtn.addEventListener('click', () => addBeerModal.classList.remove('hidden'));
+  if (closeAddModalBtn) closeAddModalBtn.addEventListener('click', () => addBeerModal.classList.add('hidden'));
+  if (addBeerModal) addBeerModal.addEventListener('click', (e) => { if (e.target === addBeerModal) addBeerModal.classList.add('hidden'); });
+  if (addBeerForm) addBeerForm.addEventListener('submit', handleAddBeerSubmit);
 
-  nextPageBtn.addEventListener('click', () => {
-    currentPage++;
-    fetchBeers();
-  });
-
-  // Detail Modal Controls
-  closeModal.addEventListener('click', () => {
-    beerModal.classList.add('hidden');
-  });
-
-  beerModal.addEventListener('click', (e) => {
-    if (e.target === beerModal) beerModal.classList.add('hidden');
-  });
-
-  // Add Beer Modal Controls
-  if (openAddBeerModalBtn) {
-    openAddBeerModalBtn.addEventListener('click', () => {
-      addBeerModal.classList.remove('hidden');
-    });
-  }
-
-  if (closeAddModalBtn) {
-    closeAddModalBtn.addEventListener('click', () => {
-      addBeerModal.classList.add('hidden');
-    });
-  }
-
-  if (addBeerModal) {
-    addBeerModal.addEventListener('click', (e) => {
-      if (e.target === addBeerModal) addBeerModal.classList.add('hidden');
-    });
-  }
-
-  // Add Beer Form Submission Handler
-  if (addBeerForm) {
-    addBeerForm.addEventListener('submit', handleAddBeerSubmit);
-  }
+  if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', () => editBeerModal.classList.add('hidden'));
+  if (editBeerModal) editBeerModal.addEventListener('click', (e) => { if (e.target === editBeerModal) editBeerModal.classList.add('hidden'); });
+  if (editBeerForm) editBeerForm.addEventListener('submit', handleEditBeerSubmit);
 });
 
-// Fetch Unique Styles for Dropdown
+// Toast System
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  
+  const bgColor = type === 'error' ? 'bg-red-900/90 border-red-500 text-red-200' : 'bg-emerald-900/90 border-emerald-500 text-emerald-200';
+  
+  toast.className = `pointer-events-auto border px-4 py-3 rounded-lg shadow-xl text-sm flex items-center gap-2 backdrop-blur transition transform duration-300 ${bgColor}`;
+  toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '✅'}</span> <span>${message}</span>`;
+  
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('opacity-0');
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// Fetch Styles Dropdown
 async function fetchStyles() {
   try {
     const res = await fetch('/api/styles');
     const styles = await res.json();
-    
     styles.forEach(style => {
       const option = document.createElement('option');
       option.value = style;
@@ -111,13 +86,11 @@ async function fetchStyles() {
   }
 }
 
-// Fetch Paginated & Filtered Beers
+// Fetch Beers
 async function fetchBeers() {
   const searchVal = searchInput.value.trim();
   const styleVal = styleSelect.value;
   const sortVal = sortSelect.value;
-  
-  // Parse sortBy and order from select value (e.g. "brewery_beer_name-asc")
   const [sortBy, order] = sortVal.split('-');
 
   const params = new URLSearchParams({
@@ -131,7 +104,6 @@ async function fetchBeers() {
 
   try {
     beerGrid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">Loading beers...</div>';
-
     const res = await fetch(`/api/beers?${params.toString()}`);
     const result = await res.json();
 
@@ -139,7 +111,7 @@ async function fetchBeers() {
     updatePaginationUI(result.pagination);
   } catch (err) {
     console.error('Error fetching beers:', err);
-    beerGrid.innerHTML = '<div class="col-span-full text-center py-12 text-red-400">Failed to load beers. Please try again later.</div>';
+    beerGrid.innerHTML = '<div class="col-span-full text-center py-12 text-red-400">Failed to load beers.</div>';
   }
 }
 
@@ -148,7 +120,6 @@ function handleSearch() {
   fetchBeers();
 }
 
-// Render Card Grid
 function renderBeers(beers) {
   if (!beers || beers.length === 0) {
     beerGrid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400">No beers found matching your criteria.</div>';
@@ -167,11 +138,9 @@ function renderBeers(beers) {
           </span>
           ${beer.abv ? `<span class="text-xs text-gray-400">${beer.abv}% ABV</span>` : ''}
         </div>
-
         <h3 class="text-lg font-bold text-white mb-1 leading-tight">${beer.beer_name}</h3>
         <p class="text-sm font-medium text-amber-500/90 mb-3">${beer.brewery_name}</p>
       </div>
-
       <div class="pt-3 border-t border-gray-700/60 flex justify-between items-center text-xs text-gray-400">
         <span>${beer.beer_style || 'Unspecified Style'}</span>
         ${beer.rank ? `<span class="font-bold text-amber-400">★ ${beer.rank}</span>` : ''}
@@ -180,19 +149,16 @@ function renderBeers(beers) {
   `).join('');
 }
 
-// Update Pagination Labels & Controls
 function updatePaginationUI(pagination) {
   const { totalItems, currentPage: page, totalPages } = pagination;
-  
   resultsCount.textContent = `Showing ${totalItems.toLocaleString()} beers`;
   pageInfo.textContent = `Page ${page} of ${totalPages}`;
   currentPageLabel.textContent = page;
-
   prevPageBtn.disabled = page <= 1;
   nextPageBtn.disabled = page >= totalPages;
 }
 
-// Open Details Modal for Selected Beer
+// Open Details Modal
 async function openBeerDetails(id) {
   try {
     modalContent.innerHTML = '<div class="text-center py-8 text-gray-400">Loading details...</div>';
@@ -203,65 +169,45 @@ async function openBeerDetails(id) {
 
     modalContent.innerHTML = `
       <div class="space-y-4">
-        <div>
-          <span class="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-md border border-amber-500/20">
-            ${beer.beer_number ? `Beer #${beer.beer_number}` : 'No Entry ID'}
-          </span>
-          <h2 class="text-2xl font-bold text-white mt-2">${beer.beer_name}</h2>
-          <p class="text-amber-500 font-medium">${beer.brewery_name}</p>
-          ${beer.aka_beer_name ? `<p class="text-xs text-gray-400 italic">AKA: ${beer.aka_beer_name}</p>` : ''}
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-md border border-amber-500/20">
+              ${beer.beer_number ? `Beer #${beer.beer_number}` : 'No Entry ID'}
+            </span>
+            <h2 class="text-2xl font-bold text-white mt-2">${beer.beer_name}</h2>
+            <p class="text-amber-500 font-medium">${beer.brewery_name}</p>
+            ${beer.aka_beer_name ? `<p class="text-xs text-gray-400 italic">AKA: ${beer.aka_beer_name}</p>` : ''}
+          </div>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 text-sm">
-          <div>
-            <span class="block text-xs text-gray-400">Style</span>
-            <span class="font-semibold text-gray-200">${beer.beer_style || '—'}</span>
-          </div>
-          <div>
-            <span class="block text-xs text-gray-400">ABV</span>
-            <span class="font-semibold text-gray-200">${beer.abv ? `${beer.abv}%` : '—'}</span>
-          </div>
-          <div>
-            <span class="block text-xs text-gray-400">Rank</span>
-            <span class="font-semibold text-amber-400">${beer.rank ? `★ ${beer.rank}` : '—'}</span>
-          </div>
-          <div>
-            <span class="block text-xs text-gray-400">IBU</span>
-            <span class="font-semibold text-gray-200">${beer.ibu || '—'}</span>
-          </div>
-          <div>
-            <span class="block text-xs text-gray-400">SRM</span>
-            <span class="font-semibold text-gray-200">${beer.srm || '—'}</span>
-          </div>
-          <div>
-            <span class="block text-xs text-gray-400">Location</span>
-            <span class="font-semibold text-gray-200">${beer.state ? `${beer.state}, ${beer.country || ''}` : (beer.country || '—')}</span>
-          </div>
+          <div><span class="block text-xs text-gray-400">Style</span><span class="font-semibold text-gray-200">${beer.beer_style || '—'}</span></div>
+          <div><span class="block text-xs text-gray-400">ABV</span><span class="font-semibold text-gray-200">${beer.abv ? `${beer.abv}%` : '—'}</span></div>
+          <div><span class="block text-xs text-gray-400">Rank</span><span class="font-semibold text-amber-400">${beer.rank ? `★ ${beer.rank}` : '—'}</span></div>
+          <div><span class="block text-xs text-gray-400">IBU</span><span class="font-semibold text-gray-200">${beer.ibu || '—'}</span></div>
+          <div><span class="block text-xs text-gray-400">SRM</span><span class="font-semibold text-gray-200">${beer.srm || '—'}</span></div>
+          <div><span class="block text-xs text-gray-400">Location</span><span class="font-semibold text-gray-200">${beer.state ? `${beer.state}, ${beer.country || ''}` : (beer.country || '—')}</span></div>
         </div>
 
-        ${beer.owned_by ? `
-          <div class="text-xs text-gray-400">
-            <strong class="text-gray-300">Parent/Owner:</strong> ${beer.owned_by}
-          </div>
-        ` : ''}
-
-        ${beer.collaborators ? `
-          <div class="text-xs text-gray-400">
-            <strong class="text-gray-300">Collaborators:</strong> ${beer.collaborators}
-          </div>
-        ` : ''}
+        <div class="pt-4 border-t border-gray-700 flex justify-end gap-3">
+          <button onclick='openEditModal(${JSON.stringify(beer).replace(/'/g, "&apos;")})' class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-lg font-medium transition">
+            Edit Beer
+          </button>
+          <button onclick="deleteBeer(${beer.id}, '${beer.beer_name.replace(/'/g, "\\'")}')" class="bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-2 rounded-lg font-medium transition">
+            Delete Beer
+          </button>
+        </div>
       </div>
     `;
   } catch (err) {
-    console.error('Error fetching beer details:', err);
+    console.error('Error fetching details:', err);
     modalContent.innerHTML = '<div class="text-center py-8 text-red-400">Failed to load beer details.</div>';
   }
 }
 
-// Submit New Beer Form
+// Submit Add Beer Form
 async function handleAddBeerSubmit(e) {
   e.preventDefault();
-
   const formData = new FormData(addBeerForm);
   const beerData = Object.fromEntries(formData.entries());
 
@@ -272,16 +218,92 @@ async function handleAddBeerSubmit(e) {
       body: JSON.stringify(beerData)
     });
 
-    if (!res.ok) throw new Error('Failed to post beer entry.');
+    const result = await res.json();
+
+    if (!res.ok) {
+      showToast(result.error || 'Failed to save beer entry.', 'error');
+      return;
+    }
 
     addBeerForm.reset();
     addBeerModal.classList.add('hidden');
+    showToast(`Successfully added "${result.beer_name}" as Beer #${result.beer_number}!`);
     
-    // Refresh grid to show newly added item
     currentPage = 1;
     fetchBeers();
   } catch (err) {
-    console.error('Error adding beer entry:', err);
-    alert('Failed to save beer. Please verify all required inputs.');
+    console.error('Error adding beer:', err);
+    showToast('Failed to save beer entry.', 'error');
+  }
+}
+
+// Populate & Open Edit Modal
+function openEditModal(beer) {
+  beerModal.classList.add('hidden');
+  
+  document.getElementById('editBeerId').value = beer.id;
+  document.getElementById('editBeerName').value = beer.beer_name || '';
+  document.getElementById('editBreweryName').value = beer.brewery_name || '';
+  document.getElementById('editBeerStyle').value = beer.beer_style || '';
+  document.getElementById('editRank').value = beer.rank || '';
+  document.getElementById('editAbv').value = beer.abv || '';
+  document.getElementById('editIbu').value = beer.ibu || '';
+  document.getElementById('editSrm').value = beer.srm || '';
+  document.getElementById('editState').value = beer.state || '';
+  document.getElementById('editCountry').value = beer.country || '';
+  document.getElementById('editAka').value = beer.aka_beer_name || '';
+
+  editBeerModal.classList.remove('hidden');
+}
+
+// Submit Edit Form
+async function handleEditBeerSubmit(e) {
+  e.preventDefault();
+  const formData = new FormData(editBeerForm);
+  const beerData = Object.fromEntries(formData.entries());
+  const id = beerData.id;
+
+  try {
+    const res = await fetch(`/api/beers/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(beerData)
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      showToast(result.error || 'Failed to update beer entry.', 'error');
+      return;
+    }
+
+    editBeerModal.classList.add('hidden');
+    showToast(`Successfully updated "${result.beer_name}"!`);
+    fetchBeers();
+  } catch (err) {
+    console.error('Error updating beer:', err);
+    showToast('Failed to update beer entry.', 'error');
+  }
+}
+
+// Delete Beer Function
+async function deleteBeer(id, name) {
+  if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+  try {
+    const res = await fetch(`/api/beers/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+
+    if (!res.ok) {
+      showToast(result.error || 'Failed to delete beer.', 'error');
+      return;
+    }
+
+    beerModal.classList.add('hidden');
+    showToast(`Deleted "${name}" from your collection.`);
+    fetchBeers();
+  } catch (err) {
+    console.error('Error deleting beer:', err);
+    showToast('Failed to delete beer entry.', 'error');
   }
 }
