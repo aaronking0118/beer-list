@@ -4,7 +4,199 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beer Log</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Restored Original Dark Theme & Layout Styles */
+    body {
+      background-color: #0b0f19;
+      color: #f7fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: #f7fafc;
+    }
+    .btn-primary {
+      background-color: #3182ce;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      background-color: #2b6cb0;
+    }
+    .btn-secondary {
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      background: #111827;
+      border: 1px solid #1f2937;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      flex: 1;
+      min-width: 200px;
+    }
+    .control-group label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      font-weight: bold;
+    }
+    .control-group input, .control-group select {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .beer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .beer-card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 1.25rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .beer-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.85rem;
+      color: #9ca3af;
+      font-weight: bold;
+    }
+    .card-meta p {
+      margin: 0.3rem 0;
+      font-size: 0.9rem;
+      color: #d1d5db;
+    }
+    .card-actions {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .btn-edit {
+      background: #374151;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: #111827;
+      border: 1px solid #1f2937;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      color: white;
+    }
+    .close-btn {
+      float: right;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    .form-group input, .form-group select {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .detail-item {
+      margin-bottom: 0.8rem;
+    }
+    .detail-item span {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+    .detail-item p {
+      margin: 0.2rem 0 0 0;
+      font-size: 1rem;
+    }
+    .modal-error {
+      background: #7f1d1d;
+      color: #fca5a5;
+      padding: 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -13,18 +205,18 @@
       <button class="btn-primary" onclick="openModal('add')">+ Add New Beer</button>
     </header>
 
-    <!-- Stats Dashboard -->
+    <!-- Stats Dashboard (Styled to match your dark theme) -->
     <div id="statsDashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-      <div style="background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; padding: 1rem; text-align: center;">
-        <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">Total Beers</div>
+      <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Total Beers</div>
         <div id="statTotalBeers" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
       </div>
-      <div style="background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; padding: 1rem; text-align: center;">
-        <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">Breweries</div>
+      <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Breweries</div>
         <div id="statTotalBreweries" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
       </div>
-      <div style="background: #1a202c; border: 1px solid #2d3748; border-radius: 8px; padding: 1rem; text-align: center;">
-        <div style="font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">Avg Rating</div>
+      <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Avg Rating</div>
         <div id="statAvgRating" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0.0</div>
       </div>
     </div>
@@ -128,7 +320,7 @@
           </div>
         </div>
 
-        <div class="form-group hidden" id="akaContainer">
+        <div class="form-group hidden" id="akaContainer" style="margin-bottom: 1rem;">
           <label for="aka">AKA / Alternate Name</label>
           <input type="text" id="aka">
         </div>
@@ -146,7 +338,7 @@
     <div class="modal-content detail-modal-content">
       <span class="close-btn" onclick="closeDetailModal()">&times;</span>
       <h2 id="detailTitle">Beer Details</h2>
-      <div id="detailBody" class="detail-body"></div>
+      <div id="detailBody" class="detail-body" style="margin-top: 1rem;"></div>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick="closeDetailModal()">Close</button>
         <button type="button" class="btn-primary" id="detailEditBtn">Edit Entry</button>
