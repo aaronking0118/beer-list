@@ -3,145 +3,361 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beer Cellar Tracker</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Beer Log</title>
+  <style>
+    /* Dark Theme & Layout Styles */
+    body {
+      background-color: #0b0f19;
+      color: #f7fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: #f7fafc;
+    }
+    .btn-primary {
+      background-color: #3182ce;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      background-color: #2b6cb0;
+    }
+    .btn-secondary {
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      background: #111827;
+      border: 1px solid #1f2937;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      flex: 1;
+      min-width: 200px;
+    }
+    .control-group label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      font-weight: bold;
+    }
+    .control-group input, .control-group select {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .beer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .beer-card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 1.25rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    /* Glassware containment fix (fits entire image within bounds without distortion) */
+    .beer-card img, .beer-card svg, .beer-card .glass-icon {
+      object-fit: contain !important;
+      max-height: 2.2rem !important;
+      width: auto !important;
+      max-width: 100% !important;
+      vertical-align: middle;
+    }
+
+    .beer-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.85rem;
+      color: #9ca3af;
+      font-weight: bold;
+    }
+    .card-meta p {
+      margin: 0.3rem 0;
+      font-size: 0.9rem;
+      color: #d1d5db;
+    }
+    .card-actions {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .btn-edit {
+      background: #374151;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    
+    /* Robust Star Rating Overlay Fix */
+    .star-wrapper {
+      position: relative !important;
+      display: inline-block !important;
+      width: 1em !important;
+      height: 1em !important;
+      vertical-align: middle;
+    }
+    .star-wrapper .star.empty {
+      color: #4a5568 !important;
+      display: inline-block !important;
+    }
+    .star-wrapper .star.fill {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: #111827;
+      border: 1px solid #1f2937;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      color: white;
+    }
+    .close-btn {
+      float: right;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #9ca3af;
+    }
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    .form-group input, .form-group select {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .detail-item {
+      margin-bottom: 0.8rem;
+    }
+    .detail-item span {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+    .detail-item p {
+      margin: 0.2rem 0 0 0;
+      font-size: 1rem;
+    }
+    .modal-error {
+      background: #7f1d1d;
+      color: #fca5a5;
+      padding: 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-container">
-      <h1>🍺 Beer Cellar Tracker</h1>
-      <div class="header-actions">
-        <button id="addBeerBtn" class="btn-primary" onclick="openModal('add')">+ Add Beer</button>
-        <!-- Analytics Button -->
-        <button id="analyticsBtn" class="btn-primary" onclick="openAnalyticsModal()" style="margin-left: 0.5rem; background-color: #3182ce; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer;">Analytics</button>
+  <div class="container">
+    <header class="app-header">
+      <h1>Beer Log</h1>
+      <button class="btn-primary" onclick="openModal('add')">+ Add New Beer</button>
+    </header>
+
+    <!-- Stats Dashboard -->
+    <div id="statsDashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Total Beers</div>
+        <div id="statTotalBeers" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
+      </div>
+      <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Breweries</div>
+        <div id="statTotalBreweries" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
+      </div>
+      <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Avg Rating</div>
+        <div id="statAvgRating" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0.0</div>
+        <div id="statAvgStars" style="font-size: 0.8rem; margin-top: 0.2rem; display: flex; justify-content: center; gap: 2px;"></div>
       </div>
     </div>
-  </header>
 
-  <main class="main-container">
-    <!-- Stats Overview Banner -->
-    <section class="stats-banner">
-      <div class="stat-card">
-        <span class="stat-label">Total Beers</span>
-        <span id="statTotalBeers" class="stat-value">0</span>
+    <!-- Filter & Search Controls -->
+    <div class="controls-bar">
+      <div class="control-group">
+        <label for="searchInput">Search</label>
+        <input type="text" id="searchInput" placeholder="Search beer or brewery...">
       </div>
-      <div class="stat-card">
-        <span class="stat-label">Unique Breweries</span>
-        <span id="statTotalBreweries" class="stat-value">0</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label">Average Score</span>
-        <div class="stat-score-container">
-          <span id="statAvgRating" class="stat-value">0.0</span>
-          <div id="statAvgStars" class="stat-stars-inline"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Filters & Search Toolbar -->
-    <section class="toolbar">
-      <div class="search-wrapper">
-        <input type="text" id="searchInput" placeholder="Search beers or breweries..." autocomplete="off">
-      </div>
-      <div class="filter-wrapper">
+      <div class="control-group">
+        <label for="styleFilter">Style</label>
         <select id="styleFilter">
           <option value="">All Styles</option>
         </select>
       </div>
-      <div class="sort-wrapper">
+      <div class="control-group">
+        <label for="sortSelect">Sort By</label>
         <select id="sortSelect">
-          <option value="recent">Sort by: Most Recent</option>
-          <option value="rank-desc">Sort by: Highest Rating</option>
-          <option value="name-asc">Sort by: Name (A-Z)</option>
+          <option value="recent">Recently Added</option>
+          <option value="rank-desc">Rating: High to Low</option>
+          <option value="name-asc">Name: A to Z</option>
         </select>
       </div>
-    </section>
+    </div>
 
-    <!-- Beer Grid Container -->
-    <section id="beerGrid" class="beer-grid">
-      <!-- Dynamically populated beer cards -->
-    </section>
-  </main>
+    <!-- Beer Grid -->
+    <div id="beerGrid" class="beer-grid"></div>
+  </div>
 
-  <!-- Add/Edit Beer Modal -->
+  <!-- Add/Edit Modal -->
   <div id="beerModal" class="modal hidden">
     <div class="modal-content">
       <span class="close-btn" onclick="closeModal()">&times;</span>
       <h2 id="modalTitle">Add New Beer</h2>
-      <div id="modalError" class="error-banner hidden"></div>
-      
+      <div id="modalError" class="modal-error hidden"></div>
       <form id="beerForm">
         <input type="hidden" id="beerId">
         
-        <div class="form-grid">
+        <div class="form-row">
           <div class="form-group">
             <label for="beer_name">Beer Name *</label>
             <input type="text" id="beer_name" required>
           </div>
-
           <div class="form-group">
             <label for="brewery_name">Brewery Name *</label>
             <input type="text" id="brewery_name" list="breweryList" required autocomplete="off">
             <datalist id="breweryList"></datalist>
           </div>
+        </div>
 
+        <div class="form-row">
           <div class="form-group">
             <label for="style">Style</label>
-            <input type="text" id="style" placeholder="e.g. Imperial Stout, IPA">
+            <input type="text" id="style">
           </div>
-
           <div class="form-group">
-            <label for="rank">Rating (1 - 5)</label>
-            <input type="number" id="rank" step="0.5" min="1" max="5" placeholder="e.g. 4.5">
+            <label for="rank">Rank (1 - 5)</label>
+            <input type="number" id="rank" step="0.1" min="1" max="5">
           </div>
+        </div>
 
+        <div class="form-row">
           <div class="form-group">
             <label for="abv">ABV (%)</label>
-            <input type="number" id="abv" step="0.1" min="0" max="30" placeholder="e.g. 7.2">
+            <input type="number" id="abv" step="0.01" min="0">
           </div>
-
           <div class="form-group">
             <label for="ibu">IBU</label>
-            <input type="number" id="ibu" step="1" min="0" max="200" placeholder="e.g. 65">
+            <input type="number" id="ibu" step="1" min="0">
           </div>
-
           <div class="form-group">
             <label for="srm">SRM (Color)</label>
-            <input type="number" id="srm" step="1" min="1" max="40" placeholder="e.g. 12">
+            <input type="number" id="srm" step="1" min="1" max="40">
           </div>
+        </div>
 
+        <div class="form-row">
           <div class="form-group">
-            <label for="location">Location / Venue</label>
-            <input type="text" id="location" placeholder="e.g. Taproom, Home Cellar">
+            <label for="location">Location</label>
+            <input type="text" id="location">
           </div>
-
           <div class="form-group">
             <label for="state">State</label>
-            <input type="text" id="state" placeholder="e.g. CA">
+            <input type="text" id="state">
           </div>
-
           <div class="form-group">
             <label for="country">Country</label>
-            <input type="text" id="country" placeholder="e.g. United States">
+            <input type="text" id="country">
           </div>
+        </div>
 
+        <div class="form-row">
           <div class="form-group">
-            <label for="owned_by">Parent Company / Owned By</label>
-            <input type="text" id="owned_by" placeholder="Optional">
+            <label for="owned_by">Owned By (Parent Company)</label>
+            <input type="text" id="owned_by">
           </div>
-
           <div class="form-group">
-            <label for="date">Date Logged / Tasted</label>
+            <label for="date">Date Consumed</label>
             <input type="date" id="date">
           </div>
         </div>
 
-        <div class="form-group full-width hidden" id="akaContainer">
+        <div class="form-group hidden" id="akaContainer" style="margin-bottom: 1rem;">
           <label for="aka">AKA / Alternate Name</label>
-          <input type="text" id="aka" placeholder="Alternate database name reference">
+          <input type="text" id="aka">
         </div>
 
-        <div class="form-actions">
+        <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
           <button type="submit" class="btn-primary">Save Beer</button>
         </div>
@@ -149,28 +365,15 @@
     </div>
   </div>
 
-  <!-- Detail View Modal -->
+  <!-- Detail Modal -->
   <div id="detailModal" class="modal hidden">
     <div class="modal-content detail-modal-content">
       <span class="close-btn" onclick="closeDetailModal()">&times;</span>
       <h2 id="detailTitle">Beer Details</h2>
-      <div id="detailBody" class="detail-body-grid">
-        <!-- Populated via JS -->
-      </div>
-      <div class="form-actions" style="margin-top: 1.5rem;">
+      <div id="detailBody" class="detail-body" style="margin-top: 1rem;"></div>
+      <div class="modal-actions">
         <button type="button" class="btn-secondary" onclick="closeDetailModal()">Close</button>
-        <button type="button" id="detailEditBtn" class="btn-primary">Edit Entry</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Analytics Modal -->
-  <div id="analyticsModal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-    <div class="modal-content" style="background: #1a202c; color: #e2e8f0; padding: 2rem; border-radius: 10px; width: 90%; max-width: 700px; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-      <button onclick="closeAnalyticsModal()" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: #a0aec0; font-size: 1.5rem; cursor: pointer;">&times;</button>
-      <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem; border-bottom: 2px solid #2d3748; padding-bottom: 0.5rem;">Cellar Analytics & Insights</h2>
-      <div id="analyticsBody">
-        <!-- Dynamically populated analytics content -->
+        <button type="button" class="btn-primary" id="detailEditBtn">Edit Entry</button>
       </div>
     </div>
   </div>
