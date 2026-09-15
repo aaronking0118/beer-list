@@ -65,7 +65,7 @@ function applyFilters() {
     if (sortBy === 'brewery') return (a.brewery_name || '').localeCompare(b.brewery_name || '');
     if (sortBy === 'rank-high') return (parseFloat(b.rank) || 0) - (parseFloat(a.rank) || 0);
     if (sortBy === 'rank-low') return (parseFloat(a.rank) || 0) - (parseFloat(b.rank) || 0);
-    return (b.id || 0) - (a.id || 0); // 'newest' default
+    return (b.id || 0) - (a.id || 0);
   });
 
   renderBeers(filtered);
@@ -141,7 +141,7 @@ function showNotification(message, type = 'success', modalId = 'add-modal') {
     notifEl = document.createElement('div');
     notifEl.className = 'form-notification';
     const content = modal.querySelector('.modal-content');
-    content.insertBefore(notifEl, content.children[2]); // Insert below title
+    content.insertBefore(notifEl, content.children[2]);
   }
   
   notifEl.style.cssText = `
@@ -151,7 +151,7 @@ function showNotification(message, type = 'success', modalId = 'add-modal') {
     font-weight: 700;
     font-size: 0.95rem;
     background-color: ${type === 'success' ? '#00A3A3' : '#E53E3E'};
-    color: #071322;
+    color: ${type === 'success' ? '#071322' : '#FFFFFF'};
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   `;
@@ -216,15 +216,15 @@ async function handleAddBeer(e) {
   const payload = {
     beer_name: document.getElementById('add-beer-name').value.trim(),
     brewery_name: document.getElementById('add-brewery-name').value.trim(),
-    style: document.getElementById('add-style').value.trim(),
+    style: document.getElementById('add-style').value.trim() || null,
     rank: document.getElementById('add-rank').value ? parseFloat(document.getElementById('add-rank').value) : null,
     abv: document.getElementById('add-abv').value ? parseFloat(document.getElementById('add-abv').value) : null,
-    ibu: document.getElementById('add-ibu').value ? parseInt(document.getElementById('add-ibu').value) : null,
-    srm: document.getElementById('add-srm').value ? parseInt(document.getElementById('add-srm').value) : null,
-    state: document.getElementById('add-state').value.trim(),
-    country: document.getElementById('add-country').value.trim(),
+    ibu: document.getElementById('add-ibu').value ? parseInt(document.getElementById('add-ibu').value, 10) : null,
+    srm: document.getElementById('add-srm').value ? parseInt(document.getElementById('add-srm').value, 10) : null,
+    state: document.getElementById('add-state').value.trim() || null,
+    country: document.getElementById('add-country').value.trim() || null,
     date: document.getElementById('add-date').value || null,
-    location: document.getElementById('add-location').value.trim()
+    location: document.getElementById('add-location').value.trim() || null
   };
 
   try {
@@ -234,32 +234,33 @@ async function handleAddBeer(e) {
       body: JSON.stringify(payload)
     });
 
+    const responseText = await res.text();
+    let data = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      data = { message: responseText || res.statusText };
+    }
+
     if (res.ok) {
-      const addedBeer = await res.json().catch(() => ({}));
-      
-      // Refresh local beer data
       await fetchBeers();
       await loadBrewerySuggestions();
 
-      // Determine beer entry number
-      const beerNumber = addedBeer.id || beersData.length;
-
-      // Show success notification in modal
+      const beerNumber = data.id || beersData.length;
       showNotification(`Beer #${beerNumber} was added successfully!`, 'success', 'add-modal');
       
-      // Reset form fields
       document.getElementById('add-beer-form').reset();
 
-      // Close modal after 1.5 seconds so user sees the message
       setTimeout(() => {
         closeAddModal();
       }, 1500);
     } else {
-      const errorData = await res.json().catch(() => ({}));
-      showNotification(`Failed to save beer: ${errorData.message || res.statusText}`, 'error', 'add-modal');
+      console.error('Server error response:', res.status, responseText);
+      const errDetail = data.error || data.message || `HTTP ${res.status}`;
+      showNotification(`Failed to save beer: ${errDetail}`, 'error', 'add-modal');
     }
   } catch (err) {
-    console.error('Error adding beer:', err);
+    console.error('Network or JS error adding beer:', err);
     showNotification(`Error saving beer: ${err.message}`, 'error', 'add-modal');
   } finally {
     submitBtn.disabled = false;
@@ -279,18 +280,18 @@ async function handleEditBeer(e) {
   const payload = {
     beer_name: document.getElementById('edit-beer-name').value.trim(),
     brewery_name: document.getElementById('edit-brewery-name').value.trim(),
-    style: document.getElementById('edit-style').value.trim(),
+    style: document.getElementById('edit-style').value.trim() || null,
     rank: document.getElementById('edit-rank').value ? parseFloat(document.getElementById('edit-rank').value) : null,
     abv: document.getElementById('edit-abv').value ? parseFloat(document.getElementById('edit-abv').value) : null,
-    ibu: document.getElementById('edit-ibu').value ? parseInt(document.getElementById('edit-ibu').value) : null,
-    srm: document.getElementById('edit-srm').value ? parseInt(document.getElementById('edit-srm').value) : null,
-    state: document.getElementById('edit-state').value.trim(),
-    country: document.getElementById('edit-country').value.trim(),
-    owned_by: document.getElementById('edit-owned-by').value.trim(),
+    ibu: document.getElementById('edit-ibu').value ? parseInt(document.getElementById('edit-ibu').value, 10) : null,
+    srm: document.getElementById('edit-srm').value ? parseInt(document.getElementById('edit-srm').value, 10) : null,
+    state: document.getElementById('edit-state').value.trim() || null,
+    country: document.getElementById('edit-country').value.trim() || null,
+    owned_by: document.getElementById('edit-owned-by').value.trim() || null,
     date: document.getElementById('edit-date').value || null,
-    location: document.getElementById('edit-location').value.trim(),
-    aka: document.getElementById('edit-aka').value.trim(),
-    collaborators: document.getElementById('edit-collaborators').value.trim()
+    location: document.getElementById('edit-location').value.trim() || null,
+    aka: document.getElementById('edit-aka').value.trim() || null,
+    collaborators: document.getElementById('edit-collaborators').value.trim() || null
   };
 
   try {
@@ -299,6 +300,14 @@ async function handleEditBeer(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+
+    const responseText = await res.text();
+    let data = {};
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      data = { message: responseText || res.statusText };
+    }
 
     if (res.ok) {
       showNotification(`Beer #${id} updated successfully!`, 'success', 'edit-modal');
@@ -309,8 +318,9 @@ async function handleEditBeer(e) {
         closeEditModal();
       }, 1200);
     } else {
-      const errorData = await res.json().catch(() => ({}));
-      showNotification(`Failed to update beer: ${errorData.message || res.statusText}`, 'error', 'edit-modal');
+      console.error('Server error response:', res.status, responseText);
+      const errDetail = data.error || data.message || `HTTP ${res.status}`;
+      showNotification(`Failed to update beer: ${errDetail}`, 'error', 'edit-modal');
     }
   } catch (err) {
     console.error('Error updating beer:', err);
