@@ -5,51 +5,107 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Beer Tracker</title>
   <style>
+    :root {
+      --mariners-navy: #0C2340;
+      --mariners-teal: #005C5C;
+      --mariners-silver: #A7A9AC;
+      --mariners-bg: #F0F4F8;
+      --mariners-white: #FFFFFF;
+      --mariners-card-bg: #FFFFFF;
+      --text-dark: #0C2340;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: #f4f6f8; color: #333; padding: 20px; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    h1 { font-size: 2rem; color: #1a1a1a; }
-    
-    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s; }
-    .btn:hover { opacity: 0.9; }
-    .btn-primary { background-color: #0066cc; color: white; }
-    .btn-warning { background-color: #f39c12; color: white; }
-    .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+    body { background-color: var(--mariners-bg); color: var(--text-dark); padding-bottom: 40px; }
+
+    /* Header Styling */
+    header { background-color: var(--mariners-navy); color: var(--mariners-white); padding: 20px 0; border-bottom: 4px solid var(--mariners-teal); margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .header-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.5px; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+    /* Buttons */
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: background-color 0.2s, transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background-color: var(--mariners-teal); color: var(--mariners-white); }
+    .btn-primary:hover { background-color: #004747; }
+    .btn-warning { background-color: var(--mariners-teal); color: var(--mariners-white); border: 1px solid rgba(255,255,255,0.2); }
+    .btn-warning:hover { background-color: #004747; }
+    .btn-secondary { background-color: var(--mariners-silver); color: var(--mariners-navy); }
+    .btn-sm { padding: 6px 14px; font-size: 0.85rem; }
     .full-width { width: 100%; }
     .mt-4 { margin-top: 1.5rem; }
 
-    .beer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-    .beer-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 8px; }
-    .beer-card h3 { font-size: 1.25rem; color: #2c3e50; }
-    .beer-card .brewery { font-weight: 600; color: #7f8c8d; }
-    .beer-card p { font-size: 0.95rem; color: #555; }
+    /* Filter & Search Controls Toolbar */
+    .controls-panel { background: var(--mariners-white); border: 1px solid #D1D5DB; border-top: 3px solid var(--mariners-teal); border-radius: 8px; padding: 18px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .control-group { display: flex; flex-direction: column; gap: 6px; }
+    .control-group label { font-size: 0.85rem; font-weight: 700; color: var(--mariners-navy); text-transform: uppercase; letter-spacing: 0.5px; }
+    .control-group input, .control-group select { padding: 9px 12px; border: 1px solid var(--mariners-silver); border-radius: 6px; font-size: 0.95rem; }
+    .control-group input:focus, .control-group select:focus { outline: none; border-color: var(--mariners-teal); box-shadow: 0 0 0 2px rgba(0, 92, 92, 0.2); }
+
+    /* Beer Card Grid */
+    .beer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
+    .beer-card { background: var(--mariners-card-bg); border-radius: 8px; padding: 20px; border: 1px solid #E5E7EB; border-left: 5px solid var(--mariners-navy); box-shadow: 0 3px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; transition: transform 0.15s, box-shadow 0.15s; }
+    .beer-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+    .beer-card h3 { font-size: 1.3rem; color: var(--mariners-navy); }
+    .beer-card .brewery { font-weight: 700; color: var(--mariners-teal); }
+    .beer-card p { font-size: 0.92rem; color: #4B5563; }
     .beer-card .btn { align-self: flex-start; margin-top: 10px; }
 
-    /* Modal Styles */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: white; width: 90%; max-width: 650px; border-radius: 10px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto; }
-    .modal-close { position: absolute; top: 15px; right: 20px; border: none; background: none; font-size: 1.8rem; cursor: pointer; color: #999; }
-    .modal-title { margin-bottom: 20px; font-size: 1.4rem; }
-    .warning-text { color: #d35400; }
-    .primary-text { color: #0066cc; }
+    /* Modal Styling */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(12, 35, 64, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: var(--mariners-white); width: 90%; max-width: 650px; border-radius: 10px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto; border-top: 6px solid var(--mariners-teal); }
+    .modal-close { position: absolute; top: 15px; right: 20px; border: none; background: none; font-size: 1.8rem; cursor: pointer; color: var(--mariners-silver); }
+    .modal-close:hover { color: var(--mariners-navy); }
+    .modal-title { margin-bottom: 20px; font-size: 1.4rem; color: var(--mariners-navy); border-bottom: 2px solid var(--mariners-silver); padding-bottom: 8px; }
 
     .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
     .form-row.three-col .form-group { flex: 1; }
     .form-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { font-size: 0.85rem; font-weight: 600; color: #444; }
-    .form-group input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95rem; }
-    .form-group input:focus { outline: none; border-color: #0066cc; }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--mariners-navy); }
+    .form-group input { padding: 9px 12px; border: 1px solid var(--mariners-silver); border-radius: 5px; font-size: 0.95rem; }
+    .form-group input:focus { outline: none; border-color: var(--mariners-teal); box-shadow: 0 0 0 2px rgba(0, 92, 92, 0.2); }
   </style>
 </head>
 <body>
 
-  <header class="container">
-    <h1>Beer Log</h1>
-    <button class="btn btn-warning" onclick="openAddModal()">+ Add New Beer</button>
+  <header>
+    <div class="header-container">
+      <h1>Beer Log</h1>
+      <button class="btn btn-warning" onclick="openAddModal()">+ Add New Beer</button>
+    </div>
   </header>
 
   <main class="container">
+    <!-- Controls Toolbar (Search & Filter) -->
+    <div class="controls-panel">
+      <div class="controls-grid">
+        <div class="control-group">
+          <label for="search-input">Search</label>
+          <input type="text" id="search-input" placeholder="Search beer or brewery..." oninput="applyFilters()">
+        </div>
+        <div class="control-group">
+          <label for="style-filter">Style</label>
+          <select id="style-filter" onchange="applyFilters()">
+            <option value="">All Styles</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="sort-by">Sort By</label>
+          <select id="sort-by" onchange="applyFilters()">
+            <option value="newest">Recently Added</option>
+            <option value="name">Beer Name (A-Z)</option>
+            <option value="brewery">Brewery (A-Z)</option>
+            <option value="rank-high">Rank (High to Low)</option>
+            <option value="rank-low">Rank (Low to High)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Beer Cards List -->
     <div id="beer-list" class="beer-grid"></div>
   </main>
 
@@ -57,10 +113,9 @@
   <div class="modal-overlay" id="add-modal" style="display: none;">
     <div class="modal-content">
       <button class="modal-close" onclick="closeAddModal()">&times;</button>
-      <h2 class="modal-title warning-text">Add New Beer Entry</h2>
+      <h2 class="modal-title">Add New Beer Entry</h2>
 
       <form id="add-beer-form" onsubmit="handleAddBeer(event)">
-        <!-- Row 1: Beer Name & Brewery -->
         <div class="form-row">
           <div class="form-group">
             <label for="add-beer-name">Beer Name *</label>
@@ -73,7 +128,6 @@
           </div>
         </div>
 
-        <!-- Row 2: Style & Rank -->
         <div class="form-row">
           <div class="form-group">
             <label for="add-style">Style</label>
@@ -85,7 +139,6 @@
           </div>
         </div>
 
-        <!-- Row 3: ABV, IBU, SRM -->
         <div class="form-row three-col">
           <div class="form-group">
             <label for="add-abv">ABV (%)</label>
@@ -101,7 +154,6 @@
           </div>
         </div>
 
-        <!-- Row 4: State & Country -->
         <div class="form-row">
           <div class="form-group">
             <label for="add-state">State</label>
@@ -113,7 +165,6 @@
           </div>
         </div>
 
-        <!-- Row 5: Date & Location -->
         <div class="form-row">
           <div class="form-group">
             <label for="add-date">Date</label>
@@ -125,7 +176,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-warning full-width mt-4">Save Beer Entry</button>
+        <button type="submit" class="btn btn-primary full-width mt-4">Save Beer Entry</button>
       </form>
     </div>
   </div>
@@ -134,12 +185,11 @@
   <div class="modal-overlay" id="edit-modal" style="display: none;">
     <div class="modal-content">
       <button class="modal-close" onclick="closeEditModal()">&times;</button>
-      <h2 class="modal-title primary-text">Edit Beer Entry</h2>
+      <h2 class="modal-title">Edit Beer Entry</h2>
 
       <form id="edit-beer-form" onsubmit="handleEditBeer(event)">
         <input type="hidden" id="edit-beer-id">
 
-        <!-- Row 1: Beer Name & Brewery -->
         <div class="form-row">
           <div class="form-group">
             <label for="edit-beer-name">Beer Name *</label>
@@ -152,7 +202,6 @@
           </div>
         </div>
 
-        <!-- Row 2: Style & Rank -->
         <div class="form-row">
           <div class="form-group">
             <label for="edit-style">Style</label>
@@ -164,7 +213,6 @@
           </div>
         </div>
 
-        <!-- Row 3: ABV, IBU, SRM -->
         <div class="form-row three-col">
           <div class="form-group">
             <label for="edit-abv">ABV (%)</label>
@@ -180,7 +228,6 @@
           </div>
         </div>
 
-        <!-- Row 4: State, Country, Owned By -->
         <div class="form-row three-col">
           <div class="form-group">
             <label for="edit-state">State</label>
@@ -196,7 +243,6 @@
           </div>
         </div>
 
-        <!-- Row 5: Date & Location -->
         <div class="form-row">
           <div class="form-group">
             <label for="edit-date">Date</label>
@@ -208,7 +254,6 @@
           </div>
         </div>
 
-        <!-- Row 6: AKA & Collaborators -->
         <div class="form-row">
           <div class="form-group">
             <label for="edit-aka">AKA / Alternate Name</label>

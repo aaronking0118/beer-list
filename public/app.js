@@ -10,10 +10,50 @@ async function fetchBeers() {
   try {
     const res = await fetch('/api/beers');
     beersData = await res.json();
-    renderBeers(beersData);
+    populateStyleFilter(beersData);
+    applyFilters();
   } catch (err) {
     console.error('Error fetching beers:', err);
   }
+}
+
+// Populate style dropdown based on unique available styles
+function populateStyleFilter(beers) {
+  const styleSelect = document.getElementById('style-filter');
+  if (!styleSelect) return;
+
+  const currentSelection = styleSelect.value;
+  const styles = [...new Set(beers.map(b => b.style).filter(Boolean))].sort();
+
+  styleSelect.innerHTML = '<option value="">All Styles</option>' + 
+    styles.map(s => `<option value="${s}">${s}</option>`).join('');
+    
+  styleSelect.value = currentSelection;
+}
+
+// Apply Search, Filter, and Sort logic
+function applyFilters() {
+  const query = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const selectedStyle = document.getElementById('style-filter')?.value || '';
+  const sortBy = document.getElementById('sort-by')?.value || 'newest';
+
+  let filtered = beersData.filter(beer => {
+    const matchesSearch = (beer.beer_name || '').toLowerCase().includes(query) ||
+                          (beer.brewery_name || '').toLowerCase().includes(query);
+    const matchesStyle = !selectedStyle || beer.style === selectedStyle;
+    return matchesSearch && matchesStyle;
+  });
+
+  // Sort results
+  filtered.sort((a, b) => {
+    if (sortBy === 'name') return (a.beer_name || '').localeCompare(b.beer_name || '');
+    if (sortBy === 'brewery') return (a.brewery_name || '').localeCompare(b.brewery_name || '');
+    if (sortBy === 'rank-high') return (parseFloat(b.rank) || 0) - (parseFloat(a.rank) || 0);
+    if (sortBy === 'rank-low') return (parseFloat(a.rank) || 0) - (parseFloat(b.rank) || 0);
+    return b.id - a.id; // 'newest' default
+  });
+
+  renderBeers(filtered);
 }
 
 // Populate datalist dropdowns for brewery suggestions
@@ -37,6 +77,11 @@ async function loadBrewerySuggestions() {
 function renderBeers(beers) {
   const container = document.getElementById('beer-list');
   if (!container) return;
+
+  if (beers.length === 0) {
+    container.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px 0;">No beers found matching criteria.</p>`;
+    return;
+  }
 
   container.innerHTML = beers.map(beer => `
     <div class="beer-card">
