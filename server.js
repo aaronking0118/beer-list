@@ -7,15 +7,19 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Serve static frontend files from 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health Check Endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
+// Get Unique Beer Styles Dropdown Options
 app.get('/api/styles', async (req, res) => {
   try {
     const result = await db.query(
@@ -24,6 +28,7 @@ app.get('/api/styles', async (req, res) => {
     
     let styles = result.rows.map(row => row.beer_style).filter(Boolean);
 
+    // Fallback default styles if database has no records yet
     if (styles.length === 0) {
       styles = [
         "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
@@ -34,12 +39,12 @@ app.get('/api/styles', async (req, res) => {
 
     res.json(styles);
   } catch (err) {
-    console.error('Error fetching styles', err);
+    console.error('Error fetching styles:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Get All Beers (with pagination, search, style filter, and sorting)
+// Get All Beers (Supports Pagination, Search, Style Filter, & Multi-Column Sorting)
 app.get('/api/beers', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -47,19 +52,25 @@ app.get('/api/beers', async (req, res) => {
     const offset = (page - 1) * limit;
     const search = req.query.search || '';
     const style = req.query.style || '';
-    const sortBy = req.query.sortBy || 'beer_number';
+    const sortBy = req.query.sortBy || 'beer_name_brewery';
     const order = (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    // Map allowed sort keys to prevent SQL injection
-    const allowedSortFields = {
-      'beer_number': 'beer_number',
-      'rank': 'rank',
-      'abv': 'abv',
-      'beer_name': 'beer_name'
-    };
+    // Map sorting keys to SQL ORDER BY clauses safely
+    let sortClause = `beer_name ${order}, brewery_name ${order}`;
 
-    const sortColumn = allowedSortFields[sortBy] || 'beer_number';
+    if (sortBy === 'beer_number') {
+      sortClause = `beer_number ${order} NULLS LAST`;
+    } else if (sortBy === 'rank') {
+      sortClause = `rank ${order} NULLS LAST`;
+    } else if (sortBy === 'abv') {
+      sortClause = `abv ${order} NULLS LAST`;
+    } else if (sortBy === 'beer_name') {
+      sortClause = `beer_name ${order}`;
+    } else if (sortBy === 'beer_name_brewery') {
+      sortClause = `beer_name ${order}, brewery_name ${order}`;
+    }
 
+    // Build WHERE clause dynamic parameters
     let whereClauses = [];
     let params = [];
     let paramIdx = 1;
@@ -78,15 +89,16 @@ app.get('/api/beers', async (req, res) => {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+    // Count Total Results for Pagination Metadata
     const countQuery = `SELECT COUNT(*) FROM beers ${whereSql}`;
     const countResult = await db.query(countQuery, params);
-    const totalBeers = parseInt(countResult.rows[0].count);
+    const totalBeers = parseInt(countResult.rows[0].count, 10);
 
-    // Handle null values in sorting (e.g., beers without ranks sorted to the bottom)
+    // Fetch Paginated & Sorted Dataset
     const dataQuery = `
       SELECT * FROM beers 
       ${whereSql} 
-      ORDER BY ${sortColumn} ${order} NULLS LAST, id ASC 
+      ORDER BY ${sortClause}, id ASC 
       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
     `;
     const dataResult = await db.query(dataQuery, [...params, limit, offset]);
@@ -96,16 +108,17 @@ app.get('/api/beers', async (req, res) => {
       pagination: {
         totalItems: totalBeers,
         currentPage: page,
-        totalPages: Math.ceil(totalBeers / limit),
+        totalPages: Math.ceil(totalBeers / limit) || 1,
         pageSize: limit
       }
     });
   } catch (err) {
-    console.error('Error executing query', err);
+    console.error('Error executing beers query:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Get Single Beer Details by ID
 app.get('/api/beers/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -117,15 +130,17 @@ app.get('/api/beers/:id', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error fetching beer', err);
+    console.error('Error fetching beer by ID:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Single Page App Fallback - serve index.html for any unhandled routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Start Express Server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
