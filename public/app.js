@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
   sortSelect.addEventListener('change', renderGrid);
   beerForm.addEventListener('submit', handleFormSubmit);
 
-  // Auto-populate state, country, owned_by when user selects or types existing brewery
   breweryInput.addEventListener('input', handleBreweryAutofill);
 });
 
@@ -44,7 +43,6 @@ async function fetchBeers() {
   }
 }
 
-// Fetch breweries and populate datalist
 async function fetchBreweries() {
   try {
     const res = await fetch('/api/breweries');
@@ -59,7 +57,6 @@ async function fetchBreweries() {
   }
 }
 
-// Auto-populate location metadata when selecting brewery
 function handleBreweryAutofill() {
   const currentVal = breweryInput.value.trim().toLowerCase();
   if (!currentVal) return;
@@ -142,23 +139,40 @@ function createBeerCardHtml(beer) {
   `;
 }
 
+function clearFormInputs() {
+  beerForm.reset();
+  document.getElementById('beerId').value = '';
+  document.getElementById('beer_name').value = '';
+  document.getElementById('brewery_name').value = '';
+  document.getElementById('style').value = '';
+  document.getElementById('rank').value = '';
+  document.getElementById('abv').value = '';
+  document.getElementById('ibu').value = '';
+  document.getElementById('srm').value = '';
+  document.getElementById('state').value = '';
+  document.getElementById('country').value = '';
+  document.getElementById('owned_by').value = '';
+  document.getElementById('date').value = '';
+  document.getElementById('location').value = '';
+  document.getElementById('aka').value = '';
+}
+
 function openModal(mode, beerId = null) {
   modalError.classList.add('hidden');
   modalError.textContent = '';
-  beerForm.reset();
+  clearFormInputs();
 
   if (mode === 'add') {
     editingBeerId = null;
-    document.getElementById('beerId').value = '';
     modalTitle.textContent = 'Add New Beer';
-    akaContainer.classList.add('hidden'); // Hide AKA on add
+    akaContainer.classList.add('hidden');
   } else if (mode === 'edit') {
     editingBeerId = beerId;
     const beer = beers.find(b => b.id === beerId);
     if (!beer) return;
 
     modalTitle.textContent = 'Edit Beer Entry';
-    akaContainer.classList.remove('hidden'); // Show AKA on edit
+    akaContainer.classList.remove('hidden');
 
     document.getElementById('beerId').value = beer.id;
     document.getElementById('beer_name').value = beer.beer_name || '';
@@ -176,8 +190,10 @@ function openModal(mode, beerId = null) {
 
     if (beer.date || beer.consumption_date) {
       const rawDate = beer.date || beer.consumption_date;
-      const formattedDate = new Date(rawDate).toISOString().split('T')[0];
-      document.getElementById('date').value = formattedDate;
+      const parsed = new Date(rawDate);
+      if (!isNaN(parsed.getTime())) {
+        document.getElementById('date').value = parsed.toISOString().split('T')[0];
+      }
     }
   }
 
@@ -228,7 +244,7 @@ async function handleFormSubmit(e) {
 
     closeModal();
     await fetchBeers();
-    await fetchBreweries(); // Refresh options if a new brewery was added
+    await fetchBreweries();
   } catch (err) {
     console.error('Form submission error:', err);
     modalError.textContent = err.message;
