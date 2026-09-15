@@ -9,6 +9,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Serve static frontend files from the 'public' directory
+app.use(express.static('public'));
+
 // 1. Health Check Route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
