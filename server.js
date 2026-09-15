@@ -16,13 +16,27 @@ const sanitizeStr = (val) => (val && String(val).trim() !== '' ? String(val).tri
 const sanitizeNum = (val) => (val !== null && val !== undefined && val !== '' && !isNaN(val) ? Number(val) : null);
 const sanitizeDate = (val) => (val && String(val).trim() !== '' ? val : null);
 
-// GET all beers
+// GET all beers (calculates dynamic contiguous beer_number sequentially by creation order)
 app.get('/api/beers', async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      'SELECT *, beer_style AS style, consumption_date AS date, aka_beer_name AS aka FROM beers ORDER BY id DESC'
-    );
-    res.json(rows);
+    const query = `
+      SELECT *, 
+        ROW_NUMBER() OVER (ORDER BY id ASC) AS computed_beer_number,
+        beer_style AS style, 
+        consumption_date AS date, 
+        aka_beer_name AS aka 
+      FROM beers 
+      ORDER BY id DESC;
+    `;
+    const { rows } = await pool.query(query);
+
+    // Prefer explicit beer_number from DB if present; otherwise fallback to computed sequence
+    const mappedRows = rows.map(r => ({
+      ...r,
+      beer_number: r.beer_number || r.computed_beer_number
+    }));
+
+    res.json(mappedRows);
   } catch (err) {
     console.error('GET /api/beers error:', err);
     res.status(500).json({ error: err.message || 'Error fetching beers' });
@@ -89,7 +103,7 @@ app.post('/api/beers', async (req, res) => {
   }
 });
 
-// PUT Edit existing beer (mapped to aka_beer_name)
+// PUT Edit existing beer
 app.put('/api/beers/:id', async (req, res) => {
   const { id } = req.params;
   const {

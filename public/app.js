@@ -65,10 +65,13 @@ function renderGrid() {
 
   // Sorting Logic
   filtered.sort((a, b) => {
-    if (sortBy === 'recent') return b.id - a.id;
+    const numA = Number(a.beer_number ?? a.id);
+    const numB = Number(b.beer_number ?? b.id);
+
+    if (sortBy === 'recent') return numB - numA;
     if (sortBy === 'rank-desc') return (b.rank || 0) - (a.rank || 0);
     if (sortBy === 'name-asc') return (a.beer_name || '').localeCompare(b.beer_name || '');
-    if (sortBy === 'number-asc') return (b.beer_number || b.id) - (a.beer_number || a.id);
+    if (sortBy === 'number-asc') return numB - numA;
     return 0;
   });
 
@@ -80,16 +83,14 @@ function renderGrid() {
   beerGrid.innerHTML = filtered.map(beer => createBeerCardHtml(beer)).join('');
 }
 
-// Generate Beer Card HTML with Top-Right Badge
+// Generate Beer Card HTML matching exact current UI styling
 function createBeerCardHtml(beer) {
-  // Use beer_number, or fallback to id
   const badgeNum = beer.beer_number ?? beer.id ?? '';
   const displayStyle = beer.style || beer.beer_style || 'N/A';
   const displayRank = beer.rank !== null && beer.rank !== undefined ? Number(beer.rank).toFixed(1) : 'N/A';
 
   return `
     <div class="beer-card">
-      <!-- Beer Number Badge Top-Right -->
       <span class="beer-badge">#${badgeNum}</span>
 
       <h3>${escapeHtml(beer.beer_name)}</h3>
@@ -98,7 +99,7 @@ function createBeerCardHtml(beer) {
       <div class="card-meta">
         <p><strong>Style:</strong> ${escapeHtml(displayStyle)}</p>
         <p><strong>Rank:</strong> ${displayRank}</p>
-        ${beer.abv ? `<p><strong>ABV:</strong> ${beer.abv}%</p>` : ''}
+        ${beer.abv ? `<p><strong>ABV:</strong> ${Number(beer.abv).toFixed(2)}%</p>` : ''}
         ${beer.location ? `<p><strong>Location:</strong> ${escapeHtml(beer.location)}</p>` : ''}
       </div>
 
@@ -138,7 +139,6 @@ function openModal(mode, beerId = null) {
     document.getElementById('location').value = beer.location || '';
     document.getElementById('aka').value = beer.aka || beer.aka_beer_name || '';
 
-    // Format date string for input element YYYY-MM-DD
     if (beer.date || beer.consumption_date) {
       const rawDate = beer.date || beer.consumption_date;
       const formattedDate = new Date(rawDate).toISOString().split('T')[0];
@@ -157,7 +157,7 @@ function closeModal() {
   beerModal.classList.add('hidden');
 }
 
-// Submit Add / Edit Form
+// Submit Form
 async function handleFormSubmit(e) {
   e.preventDefault();
   modalError.classList.add('hidden');
@@ -203,7 +203,6 @@ async function handleFormSubmit(e) {
   }
 }
 
-// Helper Sanitizer
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
