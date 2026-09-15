@@ -2,147 +2,220 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Beer Explorer</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gray: {
+              750: '#262f3d',
+              850: '#17202e',
+              950: '#0b0f17',
+            }
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    
-    <header class="mb-8 text-center">
-      <h1 class="text-4xl font-extrabold text-amber-500 tracking-tight mb-2">🍺 Beer Explorer</h1>
-      <p class="text-gray-400">Search, filter, and sort through 10,000+ beers from our database</p>
-    </header>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans">
 
-    <!-- Controls / Filters -->
-    <div class="bg-gray-800 p-4 rounded-xl shadow-md mb-8 flex flex-col md:flex-row gap-3 items-center">
-      <input 
-        type="text" 
-        id="searchInput" 
-        placeholder="Search beer or brewery..." 
-        class="w-full md:w-1/4 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500"
-      />
-      <select 
-        id="styleSelect" 
-        class="w-full md:w-1/5 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500 cursor-pointer"
-      >
-        <option value="">All Styles</option>
-      </select>
-      <select 
-        id="sortSelect" 
-        class="w-full md:w-1/4 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500 cursor-pointer"
-      >
-        <option value="brewery_beer_name-asc">Brewery, then Beer Name (A–Z)</option>
-        <option value="beer_number-asc">Beer # (Low to High)</option>
-        <option value="beer_number-desc">Beer # (High to Low)</option>
-        <option value="rank-desc">Rank (Highest First)</option>
-        <option value="rank-asc">Rank (Lowest First)</option>
-        <option value="abv-desc">ABV (Highest First)</option>
-        <option value="abv-asc">ABV (Lowest First)</option>
-        <option value="beer_name-asc">Name (A–Z)</option>
-      </select>
-      <button 
-        id="searchBtn" 
-        class="w-full md:w-1/6 bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition"
-      >
-        Search
-      </button>
+  <!-- Header Section -->
+  <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">🍺</span>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+          Beer Explorer
+        </h1>
+      </div>
       <button 
         id="openAddBeerModal" 
-        class="w-full md:w-1/6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-4 rounded-lg transition"
+        class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-emerald-900/20 flex items-center gap-1.5"
       >
-        + Add Beer
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add Beer
       </button>
     </div>
+  </header>
 
-    <div class="flex justify-between items-center mb-4 px-1">
-      <span id="resultsCount" class="text-gray-400 text-sm">Loading beers...</span>
-      <span id="pageInfo" class="text-gray-400 text-sm">Page 1</span>
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    
+    <!-- Controls Bar (Search, Style Filter, Sorting) -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-8 shadow-xl">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        
+        <!-- Search Input -->
+        <div class="md:col-span-1">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search beer or brewery..." 
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-amber-500"
+          />
+        </div>
+
+        <!-- Style Dropdown -->
+        <div>
+          <select 
+            id="styleSelect" 
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+          >
+            <option value="">All Styles</option>
+          </select>
+        </div>
+
+        <!-- Sort Dropdown -->
+        <div>
+          <select 
+            id="sortSelect" 
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+          >
+            <option value="brewery_beer_name-asc">Brewery, then Beer Name (A-Z)</option>
+            <option value="brewery_beer_name-desc">Brewery, then Beer Name (Z-A)</option>
+            <option value="beer_name-asc">Beer Name (A-Z)</option>
+            <option value="beer_name-desc">Beer Name (Z-A)</option>
+            <option value="beer_number-desc">Beer # (Highest First)</option>
+            <option value="beer_number-asc">Beer # (Lowest First)</option>
+            <option value="rank-desc">Rank (Highest First)</option>
+            <option value="rank-asc">Rank (Lowest First)</option>
+            <option value="abv-desc">ABV (High to Low)</option>
+            <option value="abv-asc">ABV (Low to High)</option>
+          </select>
+        </div>
+
+        <!-- Search Button -->
+        <div>
+          <button 
+            id="searchBtn" 
+            class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition"
+          >
+            Search
+          </button>
+        </div>
+
+      </div>
     </div>
 
-    <div id="beerGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-
-    <div class="mt-8 flex justify-center items-center gap-4">
-      <button id="prevPage" disabled class="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 font-semibold rounded-lg transition">← Previous</button>
-      <span id="currentPageLabel" class="text-amber-500 font-bold">1</span>
-      <button id="nextPage" disabled class="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 font-semibold rounded-lg transition">Next →</button>
+    <!-- Results Status Bar -->
+    <div class="flex justify-between items-center mb-4 text-xs text-gray-400">
+      <span id="resultsCount">Loading records...</span>
+      <span id="pageInfo">Page 1</span>
     </div>
 
-  </div>
+    <!-- Beer Card Grid -->
+    <div id="beerGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]">
+      <!-- Cards rendered dynamically by app.js -->
+    </div>
+
+    <!-- Pagination Navigation -->
+    <div class="mt-8 flex justify-center items-center space-x-4">
+      <button 
+        id="prevPage" 
+        disabled 
+        class="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm border border-gray-700 transition"
+      >
+        Previous
+      </button>
+      <span id="currentPageLabel" class="text-sm font-semibold text-amber-500">1</span>
+      <button 
+        id="nextPage" 
+        disabled 
+        class="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm border border-gray-700 transition"
+      >
+        Next
+      </button>
+    </div>
+  </main>
 
   <!-- Beer Detail Modal -->
-  <div id="beerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold p-1">✕</button>
-      <div id="modalContent"></div>
+  <div id="beerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+      <div id="modalContent">
+        <!-- Details populated dynamically by app.js -->
+      </div>
     </div>
   </div>
 
-  <!-- Add Beer Modal -->
-  <div id="addBeerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+  <!-- Add New Beer Modal Form -->
+  <div id="addBeerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button id="closeAddModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold p-1">✕</button>
+      <button id="closeAddModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
       
-      <h2 class="text-2xl font-bold text-amber-500 mb-4">Add New Beer Entry</h2>
+      <h2 class="text-xl font-bold text-amber-500 mb-4">Add New Beer Entry</h2>
 
       <form id="addBeerForm" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gray-400 mb-1">Beer Name *</label>
-            <input type="text" name="beer_name" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Beer Name *</label>
+            <input type="text" name="beer_name" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1">Brewery Name *</label>
-            <input type="text" name="brewery_name" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-xs text-gray-400 mb-1">Beer #</label>
-            <input type="number" name="beer_number" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-400 mb-1">Style</label>
-            <input type="text" name="beer_style" placeholder="e.g. Pilsner" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-400 mb-1">Rank (Decimal)</label>
-            <input type="number" step="0.1" name="rank" placeholder="e.g. 4.5" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Brewery Name *</label>
+            <input type="text" name="brewery_name" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gray-400 mb-1">ABV (%)</label>
-            <input type="number" step="0.01" name="abv" placeholder="5.0" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Style</label>
+            <input type="text" name="beer_style" placeholder="e.g. Pilsner" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1">IBU</label>
-            <input type="number" name="ibu" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-400 mb-1">SRM</label>
-            <input type="number" name="srm" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Rank (Decimal)</label>
+            <input type="number" step="0.1" min="0" max="5" name="rank" placeholder="e.g. 4.5" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="block text-xs text-gray-400 mb-1">State</label>
-            <input type="text" name="state" placeholder="e.g. Oregon" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
+            <label class="block text-xs font-semibold text-gray-400 mb-1">ABV (%)</label>
+            <input type="number" step="0.1" name="abv" placeholder="5.0" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
           </div>
           <div>
-            <label class="block text-xs text-gray-400 mb-1">Country</label>
-            <input type="text" name="country" placeholder="e.g. USA" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-amber-500" />
+            <label class="block text-xs font-semibold text-gray-400 mb-1">IBU</label>
+            <input type="number" name="ibu" placeholder="30" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">SRM</label>
+            <input type="number" name="srm" placeholder="5" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
           </div>
         </div>
 
-        <button type="submit" class="w-full mt-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg transition">Save Beer Entry</button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">State</label>
+            <input type="text" name="state" placeholder="e.g. Oregon" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Country</label>
+            <input type="text" name="country" placeholder="e.g. USA" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">AKA / Alternate Name</label>
+          <input type="text" name="aka_beer_name" placeholder="Optional variant name" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg text-sm transition mt-2 shadow-lg shadow-amber-900/30"
+        >
+          Save Beer Entry
+        </button>
       </form>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

@@ -135,7 +135,7 @@ app.get('/api/beers/:id', async (req, res) => {
   }
 });
 
-// Create a New Beer Entry
+// Create a New Beer Entry (Always auto-assigns next sequential beer_number)
 app.post('/api/beers', async (req, res) => {
   try {
     const {
@@ -150,7 +150,6 @@ app.post('/api/beers', async (req, res) => {
       state,
       owned_by,
       collaborators,
-      beer_number,
       rank,
       consumption_date,
       location
@@ -159,6 +158,11 @@ app.post('/api/beers', async (req, res) => {
     if (!beer_name || !brewery_name) {
       return res.status(400).json({ error: 'Beer name and brewery name are required.' });
     }
+
+    // Always calculate MAX(beer_number) + 1 sequentially
+    const maxNumResult = await db.query('SELECT MAX(beer_number) AS max_num FROM beers');
+    const maxNum = maxNumResult.rows[0].max_num;
+    const nextBeerNumber = maxNum ? parseInt(maxNum, 10) + 1 : 1;
 
     const query = `
       INSERT INTO beers (
@@ -175,15 +179,15 @@ app.post('/api/beers', async (req, res) => {
       brewery_name,
       aka_beer_name || null,
       beer_style || null,
-      abv ? parseFloat(abv) : null,
-      ibu ? parseInt(ibu, 10) : null,
-      srm ? parseInt(srm, 10) : null,
+      abv && abv.toString().trim() !== '' ? parseFloat(abv) : null,
+      ibu && ibu.toString().trim() !== '' ? parseInt(ibu, 10) : null,
+      srm && srm.toString().trim() !== '' ? parseInt(srm, 10) : null,
       country || null,
       state || null,
       owned_by || null,
       collaborators || null,
-      beer_number ? parseInt(beer_number, 10) : null,
-      rank ? parseFloat(rank) : null,
+      nextBeerNumber,
+      rank && rank.toString().trim() !== '' ? parseFloat(rank) : null,
       consumption_date || null,
       location || null
     ];
@@ -196,8 +200,44 @@ app.post('/api/beers', async (req, res) => {
   }
 });
 
-// Single Page App Fallback - serve index.html for any unhandled routes
-app.get('*', (req, res) => {
+// Update an Existing Beer Entry by ID
+app.put('/api/beers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { beer_number } = req.body;
+
+    let parsedBeerNumber = (beer_number !== undefined && beer_number !== null && beer_number.toString().trim() !== '') 
+      ? parseInt(beer_number, 10) 
+      : null;
+
+    if (!parsedBeerNumber || isNaN(parsedBeerNumber)) {
+      const maxNumResult = await db.query('SELECT MAX(beer_number) AS max_num FROM beers');
+      const maxNum = maxNumResult.rows[0].max_num;
+      parsedBeerNumber = maxNum ? parseInt(maxNum, 10) + 1 : 1;
+    }
+
+    const query = `
+      UPDATE beers 
+      SET beer_number = $1 
+      WHERE id = $2 
+      RETURNING *;
+    `;
+
+    const result = await db.query(query, [parsedBeerNumber, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Beer not found.' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating beer number:', err);
+    res.status(500).json({ error: 'Failed to update beer entry.' });
+  }
+});
+
+// Single Page App Fallback - compatible with path-to-regexp v8 / Express 5 syntax
+app.get('{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

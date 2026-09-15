@@ -277,7 +277,7 @@ async function handleAddBeerSubmit(e) {
     addBeerForm.reset();
     addBeerModal.classList.add('hidden');
     
-    // Refresh to page 1 to highlight updated list
+    // Refresh grid to show newly added item
     currentPage = 1;
     fetchBeers();
   } catch (err) {
