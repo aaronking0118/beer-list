@@ -28,6 +28,7 @@ app.get('/api/styles', async (req, res) => {
     
     let styles = result.rows.map(row => row.beer_style).filter(Boolean);
 
+    // Fallback default styles if database has no records yet
     if (styles.length === 0) {
       styles = [
         "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
@@ -43,7 +44,7 @@ app.get('/api/styles', async (req, res) => {
   }
 });
 
-// Get All Beers (Supports Pagination, Search, Style Filter, & Dynamic Multi-Column Sorting)
+// Get All Beers (Supports Pagination, Search, Style Filter, & Multi-Column Sorting)
 app.get('/api/beers', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -131,6 +132,67 @@ app.get('/api/beers/:id', async (req, res) => {
   } catch (err) {
     console.error('Error fetching beer by ID:', err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create a New Beer Entry
+app.post('/api/beers', async (req, res) => {
+  try {
+    const {
+      beer_name,
+      brewery_name,
+      aka_beer_name,
+      beer_style,
+      abv,
+      ibu,
+      srm,
+      country,
+      state,
+      owned_by,
+      collaborators,
+      beer_number,
+      rank,
+      consumption_date,
+      location
+    } = req.body;
+
+    if (!beer_name || !brewery_name) {
+      return res.status(400).json({ error: 'Beer name and brewery name are required.' });
+    }
+
+    const query = `
+      INSERT INTO beers (
+        beer_name, brewery_name, aka_beer_name, beer_style, abv, ibu, srm,
+        country, state, owned_by, collaborators, beer_number, rank,
+        consumption_date, location
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING *;
+    `;
+
+    const values = [
+      beer_name,
+      brewery_name,
+      aka_beer_name || null,
+      beer_style || null,
+      abv ? parseFloat(abv) : null,
+      ibu ? parseInt(ibu, 10) : null,
+      srm ? parseInt(srm, 10) : null,
+      country || null,
+      state || null,
+      owned_by || null,
+      collaborators || null,
+      beer_number ? parseInt(beer_number, 10) : null,
+      rank ? parseFloat(rank) : null,
+      consumption_date || null,
+      location || null
+    ];
+
+    const result = await db.query(query, values);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating new beer:', err);
+    res.status(500).json({ error: 'Failed to create beer entry.' });
   }
 });
 
