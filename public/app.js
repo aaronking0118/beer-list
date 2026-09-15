@@ -394,7 +394,7 @@ function createBeerCardHtml(beer) {
           <strong>Rank:</strong> ${starDisplay}
         </div>
         ${beer.abv ? `<p><strong>ABV:</strong> ${Number(beer.abv).toFixed(2)}%</p>` : ''}
-        ${beer.location ? `<p><strong>Location:</strong> ${escapeHtml(beer.location)}</p>` : ''}
+        ${beer.ibu ? `<p><strong>IBU:</strong> ${beer.ibu}</p>` : ''}
       </div>
 
       <div class="card-actions">
