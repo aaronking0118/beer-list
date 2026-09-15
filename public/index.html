@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beer Log</title>
+  <title>Aaron's Great Beer Adventure</title>
   <style>
     /* Dark Theme & Layout Styles */
     body {
@@ -23,10 +23,24 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #3182ce;
     }
     h1 {
       margin: 0;
-      font-size: 2rem;
+      font-size: 1.8rem;
       color: #f7fafc;
     }
     .btn-primary {
@@ -49,9 +63,6 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    .btn-secondary:hover {
-      background-color: #3f4859;
-    }
     .controls-bar {
       display: flex;
       flex-wrap: wrap;
@@ -61,7 +72,6 @@
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
-      align-items: flex-end;
     }
     .control-group {
       display: flex;
@@ -71,11 +81,8 @@
       min-width: 200px;
     }
     .control-group label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: 0.85rem;
       color: #9ca3af;
-      font-weight: bold;
     }
     .control-group input, .control-group select {
       background: #1f2937;
@@ -86,111 +93,76 @@
     }
     .beer-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 1.5rem;
     }
     .beer-card {
       background: #111827;
       border: 1px solid #1f2937;
       border-radius: 8px;
-      padding: 1.25rem;
-      position: relative;
+      padding: 1.2rem;
       display: flex;
       flex-direction: column;
+      gap: 0.8rem;
+    }
+    .beer-header {
+      display: flex;
       justify-content: space-between;
+      align-items: flex-start;
     }
-    
-    /* Glassware containment fix (fits entire image within bounds without distortion) */
-    .beer-card img, .beer-card svg, .beer-card .glass-icon {
-      object-fit: contain !important;
-      max-height: 2.2rem !important;
-      width: auto !important;
-      max-width: 100% !important;
-      vertical-align: middle;
-    }
-
-    .beer-badge {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      font-size: 0.85rem;
-      color: #9ca3af;
+    .beer-name {
+      font-size: 1.1rem;
       font-weight: bold;
+      color: #f7fafc;
+      margin: 0;
     }
-    .card-meta p {
-      margin: 0.3rem 0;
+    .brewery-name {
       font-size: 0.9rem;
-      color: #d1d5db;
+      color: #9ca3af;
+      margin: 0;
     }
-    .card-actions {
-      margin-top: 1rem;
+    .badge {
+      background: #1f2937;
+      color: #60a5fa;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .beer-details {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      display: flex;
+      gap: 1rem;
+    }
+    .beer-actions {
       display: flex;
       justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: auto;
     }
-    .btn-edit {
-      background: #374151;
-      color: white;
-      border: none;
-      padding: 0.3rem 0.8rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.85rem;
-    }
-    
-    /* Robust Star Rating Overlay Fix */
-    .star-wrapper {
-      position: relative !important;
-      display: inline-block !important;
-      width: 1em !important;
-      height: 1em !important;
-      vertical-align: middle;
-    }
-    .star-wrapper .star.empty {
-      color: #4a5568 !important;
-      display: inline-block !important;
-    }
-    .star-wrapper .star.fill {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      overflow: hidden !important;
-      white-space: nowrap !important;
-    }
-
+    /* Modal styles */
     .modal {
+      display: none;
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7);
-      display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
     }
-    .modal.hidden { display: none; }
     .modal-content {
       background: #111827;
       border: 1px solid #1f2937;
       padding: 2rem;
       border-radius: 8px;
       width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-      color: white;
-    }
-    .close-btn {
-      float: right;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #9ca3af;
-    }
-    .form-row {
+      max-width: 500px;
       display: flex;
+      flex-direction: column;
       gap: 1rem;
-      margin-bottom: 1rem;
     }
     .form-group {
-      flex: 1;
       display: flex;
       flex-direction: column;
       gap: 0.3rem;
@@ -199,44 +171,22 @@
       font-size: 0.85rem;
       color: #9ca3af;
     }
-    .form-group input, .form-group select {
+    .form-group input, .form-group textarea, .form-group select {
       background: #1f2937;
       border: 1px solid #374151;
       color: white;
-      padding: 0.5rem;
+      padding: 0.6rem;
       border-radius: 4px;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-    .detail-item {
-      margin-bottom: 0.8rem;
-    }
-    .detail-item span {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: #9ca3af;
-    }
-    .detail-item p {
-      margin: 0.2rem 0 0 0;
-      font-size: 1rem;
-    }
-    .modal-error {
-      background: #7f1d1d;
-      color: #fca5a5;
-      padding: 0.75rem;
-      border-radius: 4px;
-      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header class="app-header">
-      <h1>Beer Log</h1>
+      <div class="brand-container">
+        <img src="avatar.jpg" alt="Aaron's Avatar" class="nav-avatar">
+        <h1>Aaron's Great Beer Adventure</h1>
+      </div>
       <button class="btn-primary" onclick="openModal('add')">+ Add New Beer</button>
     </header>
 
@@ -247,151 +197,84 @@
         <div id="statTotalBeers" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
       </div>
       <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
-        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Breweries</div>
-        <div id="statTotalBreweries" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
+        <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Styles Logged</div>
+        <div id="statTotalStyles" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0</div>
       </div>
       <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
         <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Avg Rating</div>
         <div id="statAvgRating" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0.0</div>
-        <div id="statAvgStars" style="font-size: 0.8rem; margin-top: 0.2rem; display: flex; justify-content: center; gap: 2px;"></div>
       </div>
     </div>
 
-    <!-- Filter & Search Controls -->
+    <!-- Controls Bar -->
     <div class="controls-bar">
       <div class="control-group">
-        <label for="searchInput">Search</label>
-        <input type="text" id="searchInput" placeholder="Search beer, brewery, location...">
+        <label for="searchInput">Search Beers</label>
+        <input type="text" id="searchInput" placeholder="Search by name, brewery..." oninput="filterBeers()">
       </div>
       <div class="control-group">
-        <label for="styleFilter">Style</label>
-        <select id="styleFilter">
+        <label for="styleFilter">Filter by Style</label>
+        <select id="styleFilter" onchange="filterBeers()">
           <option value="">All Styles</option>
         </select>
       </div>
       <div class="control-group">
         <label for="sortSelect">Sort By</label>
-        <select id="sortSelect">
-          <option value="recent">Recently Added</option>
-          <option value="rank-desc">Rating: High to Low</option>
-          <option value="name-asc">Name: A to Z</option>
-          <option value="abv-desc">ABV: High to Low</option>
-          <option value="ibu-desc">IBU: High to Low</option>
+        <select id="sortSelect" onchange="filterBeers()">
+          <option value="dateDesc">Date Added (Newest)</option>
+          <option value="ratingDesc">Rating (Highest)</option>
+          <option value="nameAsc">Name (A-Z)</option>
         </select>
-      </div>
-      <div class="control-group" style="flex: 0.5; min-width: 140px;">
-        <label for="quickFilter">Quick Filter</label>
-        <select id="quickFilter">
-          <option value="">All Beers</option>
-          <option value="top-rated">Top Rated (4.0+ ★)</option>
-        </select>
-      </div>
-      <!-- Clear Filters Button Added Here -->
-      <div class="control-group" style="flex: 0 0 auto; min-width: auto;">
-        <button type="button" id="clearFiltersBtn" class="btn-secondary" style="height: 38px; padding: 0 1rem;">Clear Filters</button>
       </div>
     </div>
 
     <!-- Beer Grid -->
-    <div id="beerGrid" class="beer-grid"></div>
+    <div id="beerGrid" class="beer-grid">
+      <!-- Dynamic beer cards inserted here -->
+    </div>
   </div>
 
-  <!-- Add/Edit Modal -->
-  <div id="beerModal" class="modal hidden">
+  <!-- Add/Edit Beer Modal -->
+  <div id="beerModal" class="modal">
     <div class="modal-content">
-      <span class="close-btn" onclick="closeModal()">&times;</span>
-      <h2 id="modalTitle">Add New Beer</h2>
-      <div id="modalError" class="modal-error hidden"></div>
-      <form id="beerForm">
-        <input type="hidden" id="beerId">
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="beer_name">Beer Name *</label>
-            <input type="text" id="beer_name" required>
+      <h2 id="modalTitle" style="margin-top:0;">Add Beer</h2>
+      <div id="modalError" style="color: #f87171; font-size: 0.85rem; display:none;"></div>
+      <form id="beerForm" onsubmit="saveBeer(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="form-group">
+          <label for="beerName">Beer Name *</label>
+          <input type="text" id="beerName" required>
+        </div>
+        <div class="form-group">
+          <label for="breweryName">Brewery *</label>
+          <input type="text" id="breweryName" required>
+        </div>
+        <div class="form-group">
+          <label for="beerStyle">Style</label>
+          <input type="text" id="beerStyle" placeholder="e.g. IPA, Stout">
+        </div>
+        <div style="display: flex; gap: 1rem;">
+          <div class="form-group" style="flex:1;">
+            <label for="beerABV">ABV (%)</label>
+            <input type="number" step="0.1" id="beerABV" placeholder="6.5">
           </div>
-          <div class="form-group">
-            <label for="brewery_name">Brewery Name *</label>
-            <input type="text" id="brewery_name" list="breweryList" required autocomplete="off">
-            <datalist id="breweryList"></datalist>
+          <div class="form-group" style="flex:1;">
+            <label for="beerIBU">IBU</label>
+            <input type="number" id="beerIBU" placeholder="45">
           </div>
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="style">Style</label>
-            <input type="text" id="style">
-          </div>
-          <div class="form-group">
-            <label for="rank">Rank (1 - 5)</label>
-            <input type="number" id="rank" step="0.1" min="1" max="5">
-          </div>
+        <div class="form-group">
+          <label for="beerRating">Rating (1-5)</label>
+          <input type="number" step="0.5" min="1" max="5" id="beerRating" placeholder="4.5">
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="abv">ABV (%)</label>
-            <input type="number" id="abv" step="0.01" min="0">
-          </div>
-          <div class="form-group">
-            <label for="ibu">IBU</label>
-            <input type="number" id="ibu" step="1" min="0">
-          </div>
-          <div class="form-group">
-            <label for="srm">SRM (Color)</label>
-            <input type="number" id="srm" step="1" min="1" max="40">
-          </div>
+        <div class="form-group">
+          <label for="beerNotes">Tasting Notes</label>
+          <textarea id="beerNotes" rows="3" placeholder="Notes on flavor, aroma..."></textarea>
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="location">Location</label>
-            <input type="text" id="location">
-          </div>
-          <div class="form-group">
-            <label for="state">State</label>
-            <input type="text" id="state">
-          </div>
-          <div class="form-group">
-            <label for="country">Country</label>
-            <input type="text" id="country">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="owned_by">Owned By (Parent Company)</label>
-            <input type="text" id="owned_by">
-          </div>
-          <div class="form-group">
-            <label for="date">Date Consumed</label>
-            <input type="date" id="date">
-          </div>
-        </div>
-
-        <div class="form-group hidden" id="akaContainer" style="margin-bottom: 1rem;">
-          <label for="aka">AKA / Alternate Name</label>
-          <input type="text" id="aka">
-        </div>
-
-        <div class="modal-actions">
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
           <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
           <button type="submit" class="btn-primary">Save Beer</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Detail Modal -->
-  <div id="detailModal" class="modal hidden">
-    <div class="modal-content detail-modal-content">
-      <span class="close-btn" onclick="closeDetailModal()">&times;</span>
-      <h2 id="detailTitle">Beer Details</h2>
-      <div id="detailBody" class="detail-body" style="margin-top: 1rem;"></div>
-      <div class="modal-actions">
-        <button type="button" class="btn-secondary" onclick="closeDetailModal()">Close</button>
-        <button type="button" class="btn-primary" id="detailEditBtn">Edit Entry</button>
-      </div>
     </div>
   </div>
 
