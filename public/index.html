@@ -257,7 +257,7 @@
     <div class="controls-bar">
       <div class="control-group">
         <label for="searchInput">Search</label>
-        <input type="text" id="searchInput" placeholder="Search beer or brewery...">
+        <input type="text" id="searchInput" placeholder="Search beer, brewery, location...">
       </div>
       <div class="control-group">
         <label for="styleFilter">Style</label>
@@ -271,6 +271,15 @@
           <option value="recent">Recently Added</option>
           <option value="rank-desc">Rating: High to Low</option>
           <option value="name-asc">Name: A to Z</option>
+          <option value="abv-desc">ABV: High to Low</option>
+          <option value="ibu-desc">IBU: High to Low</option>
+        </select>
+      </div>
+      <div class="control-group" style="flex: 0.5; min-width: 140px;">
+        <label for="quickFilter">Quick Filter</label>
+        <select id="quickFilter">
+          <option value="">All Beers</option>
+          <option value="top-rated">Top Rated (4.0+ ★)</option>
         </select>
       </div>
     </div>

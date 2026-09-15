@@ -7,6 +7,7 @@ const beerGrid = document.getElementById('beerGrid');
 const searchInput = document.getElementById('searchInput');
 const styleFilter = document.getElementById('styleFilter');
 const sortSelect = document.getElementById('sortSelect');
+const quickFilter = document.getElementById('quickFilter');
 const beerModal = document.getElementById('beerModal');
 const beerForm = document.getElementById('beerForm');
 const modalTitle = document.getElementById('modalTitle');
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) searchInput.addEventListener('input', renderGrid);
   if (styleFilter) styleFilter.addEventListener('change', renderGrid);
   if (sortSelect) sortSelect.addEventListener('change', renderGrid);
+  if (quickFilter) quickFilter.addEventListener('change', renderGrid);
   if (beerForm) beerForm.addEventListener('submit', handleFormSubmit);
   if (breweryInput) breweryInput.addEventListener('input', handleBreweryAutofill);
 });
@@ -252,49 +254,42 @@ function renderGlasswareSvg(beer) {
   let svgPaths = '';
 
   if (type === 'weizen') {
-    // Tall curvy hourglass wheat glass
     svgPaths = `
       <path fill="${liquidColor}" d="M7.5 5h9l-0.8 11c-0.3 4.5-1.5 8-1.5 11.5a1.2 1.2 0 0 1-1.2 1.2h-3.5a1.2 1.2 0 0 1-1.2-1.2c0-3.5-1.2-7-1.5-11.5l-0.8-11z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M6.2 3.2h11.6l-1 11.5c-0.3 4.5-1.5 7.8-1.5 11.5a2 2 0 0 1-2 2h-4.2a2 2 0 0 1-2-2c0-3.7-1.2-7-1.5-11.5l-1-11.5zm-2-1.8h15.6v2H4.2V1.4zm3.6 28h8.4v2H7.8v-2z" />
       <path fill="#ffffff" opacity="0.85" d="M6.8 4h10.4v1.2H6.8z" />
     `;
   } else if (type === 'tulip') {
-    // Stemmed tulip glass for IPAs & Belgians
     svgPaths = `
       <path fill="${liquidColor}" d="M8 7c0-3.2 1.8-4.8 4-4.8s4 1.6 4 4.8c0 2.8-1.2 4.8-2 7.8l-0.8 10h-2.4l-0.8-10c-0.8-3-2-5-2-7.8z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M8 3.5c0-2 1-3.5 4-3.5s4 1.5 4 3.5c0 2.5-1 4.5-1.8 7.2-0.9 3.2-1.4 5.5-1.4 8.8v8.5h-1.6V19.5c0-3.3-.5-5.6-1.4-8.8C9 8 8 6 8 3.5zm-2 26h12v2H6v-2z" />
       <path fill="#ffffff" opacity="0.85" d="M8.8 4.2h6.4v1H8.8z" />
     `;
   } else if (type === 'goblet') {
-    // Wide chalice/goblet for sours & wild ales
     svgPaths = `
       <path fill="${liquidColor}" d="M6 7h12l-1 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14l-1.2 16a2.5 2.5 0 0 1-2.5 2.5H8.7a2.5 2.5 0 0 1-2.5-2.5L5 5.5zm-1.5-2h17v2h-17v-2zm5.5 18.5h5v6h-5v-6zm-2 6h9v2h-9v-2z" />
       <path fill="#ffffff" opacity="0.85" d="M5.8 6.5h12.4v1.2H5.8z" />
     `;
   } else if (type === 'stein') {
-    // Handled beer mug / stein
     svgPaths = `
       <path fill="${liquidColor}" d="M6.8 5.5h10.4l-0.8 22.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1L6.8 5.5z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5.8 3.8h12.4l-1 25.5a1.5 1.5 0 0 1-1.5 1.4H8.3a1.5 1.5 0 0 1-1.5-1.4L5.8 3.8zm-2-1.8h16.4v2H3.8v-2zm3.8 3.5v23.5m4-23.5v23.5m4-23.5v23.5M5.2 30.7h13.6v2H5.2v-2zm13-16c1.8 0 3.2 1.4 3.2 3.6s-1.4 3.6-3.2 3.6" />
       <path fill="#ffffff" opacity="0.85" d="M6.2 4.6h11.6v1.2H6.2z" />
     `;
   } else if (type === 'snifter') {
-    // Bulbous brandy/stout snifter
     svgPaths = `
       <path fill="${liquidColor}" d="M7 11h10a5 5 0 0 1-5 5 5 5 0 0 1-5-5z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M8 5h8a6.5 6.5 0 0 1 6.5 6.5C22.5 15.5 19 19 12 19s-10.5-3.5-10.5-7.5A6.5 6.5 0 0 1 8 5zm-2-2h12v2H6V3zm6 14v8h-3v2h8v-2h-5v-8z" />
       <path fill="#ffffff" opacity="0.85" d="M8.5 6h7v1h-7z" />
     `;
   } else if (type === 'flute') {
-    // Tall slender Pilsner flute
     svgPaths = `
       <path fill="${liquidColor}" d="M8.5 4h7l-0.8 24.5a1 1 0 0 1-1 1h-3.4a1 1 0 0 1-1-1L8.5 4z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M7.8 2.5h8.4l-0.9 26a1.5 1.5 0 0 1-1.5 1.5h-3.6a1.5 1.5 0 0 1-1.5-1.5L7.8 2.5zm-2-1.8h12.4v2H5.8V0.7zm3.2 28.5h6v2.5h-6v-2.5z" />
       <path fill="#ffffff" opacity="0.85" d="M8.5 3.2h7v1h-7z" />
     `;
   } else {
-    // Standard Nonic Pint Glass
     svgPaths = `
       <path fill="${liquidColor}" d="M6.5 5.5h11l-1.1 23a1.2 1.2 0 0 1-1.2 1.2h-6.4a1.2 1.2 0 0 1-1.2-1.2L6.5 5.5z" opacity="0.9" />
       <path fill="none" stroke="#d3dfe9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 3.5h13l-1.4 25.5a2 2 0 0 1-2 1.8H8.9a2 2 0 0 1-2-1.8L5.5 3.5zm-2-2h17v2H3.5V1.5zm3.4 28.5h10.2v2H6.9v-2z" />
@@ -316,16 +311,28 @@ function renderGrid() {
     const searchVal = (searchInput?.value || '').toLowerCase().trim();
     const selectedStyle = styleFilter?.value || '';
     const sortBy = sortSelect?.value || 'recent';
+    const quickVal = quickFilter?.value || '';
 
     let filtered = beers.filter(beer => {
       const nameStr = (beer.beer_name || '').toLowerCase();
       const breweryStr = (beer.brewery_name || '').toLowerCase();
-      const matchesSearch = nameStr.includes(searchVal) || breweryStr.includes(searchVal);
+      const locationStr = (beer.location || '').toLowerCase();
+      const ownedStr = (beer.owned_by || '').toLowerCase();
+      
+      const matchesSearch = nameStr.includes(searchVal) || 
+                            breweryStr.includes(searchVal) || 
+                            locationStr.includes(searchVal) ||
+                            ownedStr.includes(searchVal);
       
       const beerStyle = beer.style || beer.beer_style || '';
       const matchesStyle = !selectedStyle || beerStyle === selectedStyle;
 
-      return matchesSearch && matchesStyle;
+      let matchesQuick = true;
+      if (quickVal === 'top-rated') {
+        matchesQuick = Number(beer.rank) >= 4.0;
+      }
+
+      return matchesSearch && matchesStyle && matchesQuick;
     });
 
     filtered.sort((a, b) => {
@@ -335,6 +342,8 @@ function renderGrid() {
       if (sortBy === 'recent') return numB - numA;
       if (sortBy === 'rank-desc') return (b.rank || 0) - (a.rank || 0);
       if (sortBy === 'name-asc') return (a.beer_name || '').localeCompare(b.beer_name || '');
+      if (sortBy === 'abv-desc') return (Number(b.abv) || 0) - (Number(a.abv) || 0);
+      if (sortBy === 'ibu-desc') return (Number(b.ibu) || 0) - (Number(a.ibu) || 0);
       return 0;
     });
 
@@ -362,13 +371,15 @@ function createBeerCardHtml(beer) {
       <div style="display: flex; align-items: flex-start; gap: 0.8rem; margin-bottom: 0.4rem;">
         <div>${glasswareSvg}</div>
         <div style="flex-grow: 1; min-width: 0;">
-          <h3 style="padding-right: 2.5rem; margin-bottom: 0.1rem; line-height: 1.2; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(beer.beer_name)}</h3>
-          <div class="brewery-title" style="font-size: 0.85rem; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(beer.brewery_name)}</div>
+          <h3 style="padding-right: 2.5rem; margin-bottom: 0.1rem; line-height: 1.2; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(beer.beer_name)}">${escapeHtml(beer.beer_name)}</h3>
+          <div class="brewery-title" onclick="event.stopPropagation(); filterByBrewery('${escapeHtml(beer.brewery_name).replace(/'/g, "\\'")}')" style="font-size: 0.85rem; color: #63b3ed; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Filter by brewery">
+            ${escapeHtml(beer.brewery_name)}
+          </div>
         </div>
       </div>
       
       <div class="card-meta">
-        <p><strong>Style:</strong> ${escapeHtml(displayStyle)}</p>
+        <p><strong>Style:</strong> <span onclick="event.stopPropagation(); filterByStyle('${escapeHtml(displayStyle).replace(/'/g, "\\'")}')" style="color: #63b3ed; cursor: pointer;" title="Filter by style">${escapeHtml(displayStyle)}</span></p>
         <div class="card-rank-row">
           <strong>Rank:</strong> ${starDisplay}
         </div>
@@ -381,6 +392,20 @@ function createBeerCardHtml(beer) {
       </div>
     </div>
   `;
+}
+
+function filterByStyle(styleName) {
+  if (styleFilter) {
+    styleFilter.value = styleName;
+    renderGrid();
+  }
+}
+
+function filterByBrewery(breweryName) {
+  if (searchInput) {
+    searchInput.value = breweryName;
+    renderGrid();
+  }
 }
 
 function openDetailModal(id) {
