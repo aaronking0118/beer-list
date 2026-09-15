@@ -239,7 +239,7 @@ async function handleAddBeer(e) {
     try {
       data = JSON.parse(responseText);
     } catch (parseErr) {
-      data = { message: responseText || res.statusText };
+      data = { error: responseText || res.statusText };
     }
 
     if (res.ok) {
@@ -306,7 +306,7 @@ async function handleEditBeer(e) {
     try {
       data = JSON.parse(responseText);
     } catch (parseErr) {
-      data = { message: responseText || res.statusText };
+      data = { error: responseText || res.statusText };
     }
 
     if (res.ok) {

@@ -11,13 +11,19 @@ const pool = new Pool({
 app.use(express.json());
 app.use(express.static('public'));
 
+// Helper sanitizers to convert empty inputs to SQL NULLs or numbers
+const sanitizeStr = (val) => (val && String(val).trim() !== '' ? String(val).trim() : null);
+const sanitizeNum = (val) => (val !== null && val !== undefined && val !== '' && !isNaN(val) ? Number(val) : null);
+const sanitizeDate = (val) => (val && String(val).trim() !== '' ? val : null);
+
 // GET all beers
 app.get('/api/beers', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM beers ORDER BY id DESC');
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('GET /api/beers error:', err);
+    res.status(500).json({ error: err.message || 'Error fetching beers' });
   }
 });
 
@@ -28,13 +34,14 @@ app.get('/api/breweries', async (req, res) => {
       SELECT DISTINCT ON (LOWER(TRIM(brewery_name))) 
         brewery_name, state, country, owned_by 
       FROM beers 
-      WHERE brewery_name IS NOT NULL AND brewery_name != '' 
+      WHERE brewery_name IS NOT NULL AND TRIM(brewery_name) != '' 
       ORDER BY LOWER(TRIM(brewery_name));
     `;
     const { rows } = await pool.query(query);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('GET /api/breweries error:', err);
+    res.status(500).json({ error: err.message || 'Error fetching breweries' });
   }
 });
 
@@ -43,7 +50,11 @@ app.post('/api/beers', async (req, res) => {
   const {
     beer_name, brewery_name, style, rank, abv,
     ibu, srm, state, country, date, location
-  } = req.body;
+  } = req.body || {};
+
+  if (!beer_name || !brewery_name) {
+    return res.status(400).json({ error: 'Beer Name and Brewery Name are required.' });
+  }
 
   const query = `
     INSERT INTO beers (
@@ -54,15 +65,25 @@ app.post('/api/beers', async (req, res) => {
   `;
 
   const values = [
-    beer_name, brewery_name, style || null, rank || null, abv || null,
-    ibu || null, srm || null, state || null, country || null, date || null, location || null
+    sanitizeStr(beer_name),
+    sanitizeStr(brewery_name),
+    sanitizeStr(style),
+    sanitizeNum(rank),
+    sanitizeNum(abv),
+    sanitizeNum(ibu),
+    sanitizeNum(srm),
+    sanitizeStr(state),
+    sanitizeStr(country),
+    sanitizeDate(date),
+    sanitizeStr(location)
   ];
 
   try {
     const { rows } = await pool.query(query, values);
     res.status(201).json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('POST /api/beers Database Error:', err);
+    res.status(500).json({ error: err.message || 'Database error occurred while adding beer.' });
   }
 });
 
@@ -73,7 +94,11 @@ app.put('/api/beers/:id', async (req, res) => {
     beer_name, brewery_name, style, rank, abv,
     ibu, srm, state, country, owned_by, date,
     location, aka, collaborators
-  } = req.body;
+  } = req.body || {};
+
+  if (!beer_name || !brewery_name) {
+    return res.status(400).json({ error: 'Beer Name and Brewery Name are required.' });
+  }
 
   const query = `
     UPDATE beers SET 
@@ -96,9 +121,21 @@ app.put('/api/beers/:id', async (req, res) => {
   `;
 
   const values = [
-    beer_name, brewery_name, style || null, rank || null, abv || null,
-    ibu || null, srm || null, state || null, country || null, owned_by || null,
-    date || null, location || null, aka || null, collaborators || null, id
+    sanitizeStr(beer_name),
+    sanitizeStr(brewery_name),
+    sanitizeStr(style),
+    sanitizeNum(rank),
+    sanitizeNum(abv),
+    sanitizeNum(ibu),
+    sanitizeNum(srm),
+    sanitizeStr(state),
+    sanitizeStr(country),
+    sanitizeStr(owned_by),
+    sanitizeDate(date),
+    sanitizeStr(location),
+    sanitizeStr(aka),
+    sanitizeStr(collaborators),
+    id
   ];
 
   try {
@@ -108,7 +145,8 @@ app.put('/api/beers/:id', async (req, res) => {
     }
     res.json(rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(`PUT /api/beers/${id} Database Error:`, err);
+    res.status(500).json({ error: err.message || 'Database error occurred while updating beer.' });
   }
 });
 
