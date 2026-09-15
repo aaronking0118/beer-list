@@ -28,7 +28,6 @@ app.get('/api/styles', async (req, res) => {
     
     let styles = result.rows.map(row => row.beer_style).filter(Boolean);
 
-    // Fallback default styles if database has no records yet
     if (styles.length === 0) {
       styles = [
         "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
@@ -44,7 +43,7 @@ app.get('/api/styles', async (req, res) => {
   }
 });
 
-// Get All Beers (Supports Pagination, Search, Style Filter, & Multi-Column Sorting)
+// Get All Beers (Supports Pagination, Search, Style Filter, & Dynamic Multi-Column Sorting)
 app.get('/api/beers', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -52,11 +51,11 @@ app.get('/api/beers', async (req, res) => {
     const offset = (page - 1) * limit;
     const search = req.query.search || '';
     const style = req.query.style || '';
-    const sortBy = req.query.sortBy || 'beer_name_brewery';
+    const sortBy = req.query.sortBy || 'brewery_beer_name';
     const order = (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    // Map sorting keys to SQL ORDER BY clauses safely
-    let sortClause = `beer_name ${order}, brewery_name ${order}`;
+    // Map allowed sorting keys to SQL ORDER BY clauses
+    let sortClause = `brewery_name ${order}, beer_name ${order}`;
 
     if (sortBy === 'beer_number') {
       sortClause = `beer_number ${order} NULLS LAST`;
@@ -66,8 +65,8 @@ app.get('/api/beers', async (req, res) => {
       sortClause = `abv ${order} NULLS LAST`;
     } else if (sortBy === 'beer_name') {
       sortClause = `beer_name ${order}`;
-    } else if (sortBy === 'beer_name_brewery') {
-      sortClause = `beer_name ${order}, brewery_name ${order}`;
+    } else if (sortBy === 'brewery_beer_name') {
+      sortClause = `brewery_name ${order}, beer_name ${order}`;
     }
 
     // Build WHERE clause dynamic parameters
