@@ -1,92 +1,156 @@
-require('dotenv').config();
-
-const fs = require('fs');
+const express = require('express');
 const { Pool } = require('pg');
-const csv = require('csv-parser');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+// PostgreSQL Connection
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/beer_db'
 });
 
-// Helper function to safely parse numbers
-const parseNum = (val, parseFn) => {
-  if (!val || typeof val !== 'string' || val.trim() === '') return null;
-  const parsed = parseFn(val);
-  return isNaN(parsed) ? null : parsed;
-};
+app.use(express.json());
+app.use(express.static('public'));
 
-// Helper function to parse strict dates or convert single years/ranges safely
-const parseDate = (val) => {
-  if (!val || typeof val !== 'string' || val.trim() === '') return null;
-  const cleaned = val.trim();
+// Helper utility to safely convert blank form strings to NULL or correct types
+const sanitizeStr = (val) => (val && String(val).trim() !== '' ? String(val).trim() : null);
+const sanitizeNum = (val) => (val !== null && val !== undefined && val !== '' && !isNaN(val) ? Number(val) : null);
+const sanitizeDate = (val) => (val && String(val).trim() !== '' ? val : null);
 
-  // If it's a 4-digit year (e.g. "2003"), convert to "2003-01-01"
-  if (/^\d{4}$/.test(cleaned)) {
-    return `${cleaned}-01-01`;
+// GET all beers
+app.get('/api/beers', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM beers ORDER BY id DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/beers error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET unique brewery list for auto-suggestions
+app.get('/api/breweries', async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT ON (LOWER(TRIM(brewery_name))) 
+        brewery_name, state, country, owned_by 
+      FROM beers 
+      WHERE brewery_name IS NOT NULL AND TRIM(brewery_name) != '' 
+      ORDER BY LOWER(TRIM(brewery_name));
+    `;
+    const { rows } = await pool.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/breweries error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST Add new beer (11 fields)
+app.post('/api/beers', async (req, res) => {
+  const {
+    beer_name, brewery_name, style, rank, abv,
+    ibu, srm, state, country, date, location
+  } = req.body || {};
+
+  // Validation check for required fields
+  if (!beer_name || !brewery_name) {
+    return res.status(400).json({ error: 'Beer Name and Brewery Name are required.' });
   }
 
-  // Validate standard date strings
-  const parsedTimestamp = Date.parse(cleaned);
-  if (isNaN(parsedTimestamp)) return null;
+  const query = `
+    INSERT INTO beers (
+      beer_name, brewery_name, style, rank, abv,
+      ibu, srm, state, country, date, location
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING *;
+  `;
 
-  // Convert valid dates to ISO string YYYY-MM-DD
-  return new Date(parsedTimestamp).toISOString().split('T')[0];
-};
+  const values = [
+    sanitizeStr(beer_name),
+    sanitizeStr(brewery_name),
+    sanitizeStr(style),
+    sanitizeNum(rank),
+    sanitizeNum(abv),
+    sanitizeNum(ibu),
+    sanitizeNum(srm),
+    sanitizeStr(state),
+    sanitizeStr(country),
+    sanitizeDate(date),
+    sanitizeStr(location)
+  ];
 
-async function importCSV() {
-  const client = await pool.connect();
-  const rows = [];
+  try {
+    const { rows } = await pool.query(query, values);
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error('POST /api/beers Database Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-  fs.createReadStream('beers.csv')
-    .pipe(csv())
-    .on('data', (data) => rows.push(data))
-    .on('end', async () => {
-      console.log(`Parsed ${rows.length} rows. Starting import...`);
+// PUT Edit existing beer (14 fields)
+app.put('/api/beers/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    beer_name, brewery_name, style, rank, abv,
+    ibu, srm, state, country, owned_by, date,
+    location, aka, collaborators
+  } = req.body || {};
 
-      const queryText = `
-        INSERT INTO beers (
-          brewery_name, beer_name, aka_beer_name, beer_style, 
-          abv, ibu, srm, rank, country_state, owned_by, 
-          collaborators, consumption_date, location
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-        )
-      `;
+  if (!beer_name || !brewery_name) {
+    return res.status(400).json({ error: 'Beer Name and Brewery Name are required.' });
+  }
 
-      try {
-        await client.query('BEGIN');
+  const query = `
+    UPDATE beers SET 
+      beer_name = $1,
+      brewery_name = $2,
+      style = $3,
+      rank = $4,
+      abv = $5,
+      ibu = $6,
+      srm = $7,
+      state = $8,
+      country = $9,
+      owned_by = $10,
+      date = $11,
+      location = $12,
+      aka = $13,
+      collaborators = $14
+    WHERE id = $15
+    RETURNING *;
+  `;
 
-        for (const row of rows) {
-          const values = [
-            row['brewery_name'] || null,
-            row['beer_name'] || null,
-            row['aka_beer_name'] || null,
-            row['beer_style'] || null,
-            parseNum(row['abv'], parseFloat),
-            parseNum(row['ibu'], (v) => parseInt(v, 10)),
-            parseNum(row['srm'], (v) => parseInt(v, 10)),
-            parseNum(row['rank'], (v) => parseInt(v, 10)),
-            row['country_state'] || null,
-            row['owned_by'] || null,
-            row['collaborators'] || null,
-            parseDate(row['consumption_date']),
-            row['location'] || null
-          ];
+  const values = [
+    sanitizeStr(beer_name),
+    sanitizeStr(brewery_name),
+    sanitizeStr(style),
+    sanitizeNum(rank),
+    sanitizeNum(abv),
+    sanitizeNum(ibu),
+    sanitizeNum(srm),
+    sanitizeStr(state),
+    sanitizeStr(country),
+    sanitizeStr(owned_by),
+    sanitizeDate(date),
+    sanitizeStr(location),
+    sanitizeStr(aka),
+    sanitizeStr(collaborators),
+    id
+  ];
 
-          await client.query(queryText, values);
-        }
+  try {
+    const { rows } = await pool.query(query, values);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Beer entry not found' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(`PUT /api/beers/${id} Database Error:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-        await client.query('COMMIT');
-        console.log('Import successful!');
-      } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error importing data:', err);
-      } finally {
-        client.release();
-        await pool.end();
-      }
-    });
-}
-
-importCSV();
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

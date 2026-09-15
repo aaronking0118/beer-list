@@ -101,6 +101,7 @@ function updateStats() {
   const totalBeersEl = document.getElementById('statTotalBeers');
   const totalBreweriesEl = document.getElementById('statTotalBreweries');
   const avgRatingEl = document.getElementById('statAvgRating');
+  const avgStarsEl = document.getElementById('statAvgStars');
 
   if (!totalBeersEl) return;
 
@@ -117,6 +118,10 @@ function updateStats() {
   totalBeersEl.textContent = totalBeers;
   totalBreweriesEl.textContent = uniqueBreweries;
   avgRatingEl.textContent = avgRating;
+
+  if (avgStarsEl) {
+    avgStarsEl.innerHTML = ratedBeers.length > 0 ? renderStarRating(Number(avgRating)) : '';
+  }
 }
 
 function getRankColor(rank) {

@@ -95,6 +95,16 @@
       flex-direction: column;
       justify-content: space-between;
     }
+    
+    /* Glassware containment fix (fits entire image within bounds without distortion) */
+    .beer-card img, .beer-card svg, .beer-card .glass-icon {
+      object-fit: contain !important;
+      max-height: 2.2rem !important;
+      width: auto !important;
+      max-width: 100% !important;
+      vertical-align: middle;
+    }
+
     .beer-badge {
       position: absolute;
       top: 1rem;
@@ -239,6 +249,7 @@
       <div style="background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 1rem; text-align: center;">
         <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Avg Rating</div>
         <div id="statAvgRating" style="font-size: 1.5rem; font-weight: bold; color: #f7fafc; margin-top: 0.2rem;">0.0</div>
+        <div id="statAvgStars" style="font-size: 0.8rem; margin-top: 0.2rem; display: flex; justify-content: center; gap: 2px;"></div>
       </div>
     </div>
 
