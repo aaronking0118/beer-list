@@ -6,67 +6,71 @@
   <title>Beer Tracker</title>
   <style>
     :root {
-      --mariners-navy: #0C2340;
-      --mariners-teal: #005C5C;
+      --mariners-dark-bg: #071322;
+      --mariners-card-bg: #0C2340;
+      --mariners-card-border: #1E3A5F;
+      --mariners-teal: #00A3A3;
+      --mariners-teal-hover: #008080;
       --mariners-silver: #A7A9AC;
-      --mariners-bg: #F0F4F8;
-      --mariners-white: #FFFFFF;
-      --mariners-card-bg: #FFFFFF;
-      --text-dark: #0C2340;
+      --mariners-silver-dark: #3A4756;
+      --mariners-text-light: #F0F4F8;
+      --mariners-text-muted: #94A3B8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: var(--mariners-bg); color: var(--text-dark); padding-bottom: 40px; }
+    body { background-color: var(--mariners-dark-bg); color: var(--mariners-text-light); padding-bottom: 40px; }
 
     /* Header Styling */
-    header { background-color: var(--mariners-navy); color: var(--mariners-white); padding: 20px 0; border-bottom: 4px solid var(--mariners-teal); margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    header { background-color: #040D18; color: var(--mariners-text-light); padding: 20px 0; border-bottom: 3px solid var(--mariners-teal); margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
     .header-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
-    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.5px; }
+    h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.5px; color: var(--mariners-text-light); }
 
     .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
     /* Buttons */
     .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: background-color 0.2s, transform 0.1s; }
     .btn:active { transform: scale(0.98); }
-    .btn-primary { background-color: var(--mariners-teal); color: var(--mariners-white); }
-    .btn-primary:hover { background-color: #004747; }
-    .btn-warning { background-color: var(--mariners-teal); color: var(--mariners-white); border: 1px solid rgba(255,255,255,0.2); }
-    .btn-warning:hover { background-color: #004747; }
-    .btn-secondary { background-color: var(--mariners-silver); color: var(--mariners-navy); }
+    .btn-primary { background-color: var(--mariners-teal); color: var(--mariners-dark-bg); }
+    .btn-primary:hover { background-color: var(--mariners-teal-hover); color: var(--mariners-text-light); }
+    .btn-warning { background-color: var(--mariners-teal); color: var(--mariners-dark-bg); border: 1px solid rgba(255,255,255,0.1); }
+    .btn-warning:hover { background-color: var(--mariners-teal-hover); color: var(--mariners-text-light); }
+    .btn-secondary { background-color: var(--mariners-silver-dark); color: var(--mariners-text-light); }
     .btn-sm { padding: 6px 14px; font-size: 0.85rem; }
     .full-width { width: 100%; }
     .mt-4 { margin-top: 1.5rem; }
 
     /* Filter & Search Controls Toolbar */
-    .controls-panel { background: var(--mariners-white); border: 1px solid #D1D5DB; border-top: 3px solid var(--mariners-teal); border-radius: 8px; padding: 18px; margin-bottom: 25px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .controls-panel { background: var(--mariners-card-bg); border: 1px solid var(--mariners-card-border); border-top: 3px solid var(--mariners-teal); border-radius: 8px; padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
     .control-group { display: flex; flex-direction: column; gap: 6px; }
-    .control-group label { font-size: 0.85rem; font-weight: 700; color: var(--mariners-navy); text-transform: uppercase; letter-spacing: 0.5px; }
-    .control-group input, .control-group select { padding: 9px 12px; border: 1px solid var(--mariners-silver); border-radius: 6px; font-size: 0.95rem; }
-    .control-group input:focus, .control-group select:focus { outline: none; border-color: var(--mariners-teal); box-shadow: 0 0 0 2px rgba(0, 92, 92, 0.2); }
+    .control-group label { font-size: 0.85rem; font-weight: 700; color: var(--mariners-teal); text-transform: uppercase; letter-spacing: 0.5px; }
+    .control-group input, .control-group select { padding: 9px 12px; background-color: #07172B; border: 1px solid var(--mariners-card-border); border-radius: 6px; font-size: 0.95rem; color: var(--mariners-text-light); }
+    .control-group input:focus, .control-group select:focus { outline: none; border-color: var(--mariners-teal); box-shadow: 0 0 0 2px rgba(0, 163, 163, 0.25); }
 
     /* Beer Card Grid */
     .beer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
-    .beer-card { background: var(--mariners-card-bg); border-radius: 8px; padding: 20px; border: 1px solid #E5E7EB; border-left: 5px solid var(--mariners-navy); box-shadow: 0 3px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; transition: transform 0.15s, box-shadow 0.15s; }
-    .beer-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
-    .beer-card h3 { font-size: 1.3rem; color: var(--mariners-navy); }
+    .beer-card { background: var(--mariners-card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--mariners-card-border); border-left: 5px solid var(--mariners-teal); box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; transition: transform 0.15s, box-shadow 0.15s; }
+    .beer-card:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,0.4); border-color: var(--mariners-teal); }
+    .beer-card h3 { font-size: 1.3rem; color: var(--mariners-text-light); }
     .beer-card .brewery { font-weight: 700; color: var(--mariners-teal); }
-    .beer-card p { font-size: 0.92rem; color: #4B5563; }
+    .beer-card p { font-size: 0.92rem; color: var(--mariners-text-muted); }
+    .beer-card p strong { color: var(--mariners-silver); }
     .beer-card .btn { align-self: flex-start; margin-top: 10px; }
 
     /* Modal Styling */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(12, 35, 64, 0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: var(--mariners-white); width: 90%; max-width: 650px; border-radius: 10px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto; border-top: 6px solid var(--mariners-teal); }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 10, 18, 0.85); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: var(--mariners-card-bg); width: 90%; max-width: 650px; border-radius: 10px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto; border: 1px solid var(--mariners-card-border); border-top: 6px solid var(--mariners-teal); box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
     .modal-close { position: absolute; top: 15px; right: 20px; border: none; background: none; font-size: 1.8rem; cursor: pointer; color: var(--mariners-silver); }
-    .modal-close:hover { color: var(--mariners-navy); }
-    .modal-title { margin-bottom: 20px; font-size: 1.4rem; color: var(--mariners-navy); border-bottom: 2px solid var(--mariners-silver); padding-bottom: 8px; }
+    .modal-close:hover { color: var(--mariners-teal); }
+    .modal-title { margin-bottom: 20px; font-size: 1.4rem; color: var(--mariners-text-light); border-bottom: 2px solid var(--mariners-card-border); padding-bottom: 8px; }
 
     .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
     .form-row.three-col .form-group { flex: 1; }
     .form-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--mariners-navy); }
-    .form-group input { padding: 9px 12px; border: 1px solid var(--mariners-silver); border-radius: 5px; font-size: 0.95rem; }
-    .form-group input:focus { outline: none; border-color: var(--mariners-teal); box-shadow: 0 0 0 2px rgba(0, 92, 92, 0.2); }
+    .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--mariners-teal); }
+    .form-group input { padding: 9px 12px; background-color: #07172B; border: 1px solid var(--mariners-card-border); border-radius: 5px; font-size: 0.95rem; color: var(--mariners-text-light); }
+    .form-group input:focus { outline: none; border-color: var(--mariners-teal); box-shadow: 0 0 0 2px rgba(0, 163, 163, 0.25); }
+    .form-group input::placeholder { color: var(--mariners-silver-dark); }
   </style>
 </head>
 <body>
