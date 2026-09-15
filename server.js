@@ -19,7 +19,7 @@ const sanitizeDate = (val) => (val && String(val).trim() !== '' ? val : null);
 // GET all beers
 app.get('/api/beers', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM beers ORDER BY id DESC');
+    const { rows } = await pool.query('SELECT *, beer_style AS style FROM beers ORDER BY id DESC');
     res.json(rows);
   } catch (err) {
     console.error('GET /api/beers error:', err);
@@ -45,7 +45,7 @@ app.get('/api/breweries', async (req, res) => {
   }
 });
 
-// POST Add new beer (11 fields)
+// POST Add new beer (maps incoming req.body.style -> DB column beer_style)
 app.post('/api/beers', async (req, res) => {
   const {
     beer_name, brewery_name, style, rank, abv,
@@ -58,10 +58,10 @@ app.post('/api/beers', async (req, res) => {
 
   const query = `
     INSERT INTO beers (
-      beer_name, brewery_name, style, rank, abv,
+      beer_name, brewery_name, beer_style, rank, abv,
       ibu, srm, state, country, date, location
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *;
+    RETURNING *, beer_style AS style;
   `;
 
   const values = [
@@ -87,7 +87,7 @@ app.post('/api/beers', async (req, res) => {
   }
 });
 
-// PUT Edit existing beer (14 fields)
+// PUT Edit existing beer (maps incoming req.body.style -> DB column beer_style)
 app.put('/api/beers/:id', async (req, res) => {
   const { id } = req.params;
   const {
@@ -104,7 +104,7 @@ app.put('/api/beers/:id', async (req, res) => {
     UPDATE beers SET 
       beer_name = $1,
       brewery_name = $2,
-      style = $3,
+      beer_style = $3,
       rank = $4,
       abv = $5,
       ibu = $6,
@@ -117,7 +117,7 @@ app.put('/api/beers/:id', async (req, res) => {
       aka = $13,
       collaborators = $14
     WHERE id = $15
-    RETURNING *;
+    RETURNING *, beer_style AS style;
   `;
 
   const values = [
