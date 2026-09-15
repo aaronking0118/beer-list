@@ -120,7 +120,7 @@ function updateStats() {
   avgRatingEl.textContent = avgRating;
 
   if (avgStarsEl) {
-    avgStarsEl.innerHTML = ratedBeers.length > 0 ? renderStarRating(Number(avgRating)) : '';
+    avgStarsEl.innerHTML = ratedBeers.length > 0 ? renderStarsOnly(Number(avgRating)) : '';
   }
 }
 
@@ -162,6 +162,31 @@ function renderStarRating(rank) {
       </span>
     </div>
   `;
+}
+
+function renderStarsOnly(rank) {
+  if (rank === null || rank === undefined || isNaN(rank)) return '';
+  const numericRank = Number(rank);
+  const color = getRankColor(numericRank);
+  let starsHtml = '';
+
+  for (let i = 1; i <= 5; i++) {
+    let fillPercentage = 0;
+    if (numericRank >= i) {
+      fillPercentage = 100;
+    } else if (numericRank > i - 1) {
+      fillPercentage = (numericRank - (i - 1)) * 100;
+    }
+
+    starsHtml += `
+      <span class="star-wrapper" title="${numericRank.toFixed(1)} / 5.0">
+        <span class="star empty">&#9733;</span>
+        <span class="star fill" style="width: ${fillPercentage}%; color: ${color};">&#9733;</span>
+      </span>
+    `;
+  }
+
+  return `<div style="display: inline-flex; justify-content: center; align-items: center;">${starsHtml}</div>`;
 }
 
 function getBeerLiquidColor(beer) {
@@ -262,7 +287,7 @@ function renderGlasswareSvg(beer) {
   }
 
   return `
-    <svg class="glassware-icon" viewBox="0 0 24 36" width="36" height="54" style="overflow: visible; display: block; flex-shrink: 0;" title="Style: ${escapeHtml(styleName)} | Glass: ${type} | SRM: ${beer.srm ?? 'N/A'}">
+    <svg class="glassware-icon" viewBox="0 0 24 36" preserveAspectRatio="xMidYMid meet" width="36" height="54" style="overflow: visible; display: block; flex-shrink: 0;" title="Style: ${escapeHtml(styleName)} | Glass: ${type} | SRM: ${beer.srm ?? 'N/A'}">
       ${svgPaths}
     </svg>
   `;
