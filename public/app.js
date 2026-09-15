@@ -1,20 +1,23 @@
-let allBeers = [];
+let beers = [];
 
 async function fetchBeers() {
   try {
     const res = await fetch('/api/beers');
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    allBeers = await res.json();
+    beers = await res.json();
     populateStyleFilter();
     renderGrid();
   } catch (err) {
     console.error('Error fetching beers:', err);
-    document.getElementById('beerGrid').innerHTML = `
-      <div style="grid-column: 1 / -1; padding: 2rem; color: #fc8181; background: #2d3748; border-radius: 8px; text-align: center;">
-        <h3>Error loading beers</h3>
-        <p>${escapeHtml(err.message)}</p>
-      </div>
-    `;
+    const grid = document.getElementById('beerGrid');
+    if (grid) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 2rem; color: #fc8181; background: #2d3748; border-radius: 8px; text-align: center;">
+          <h3>Error loading beers</h3>
+          <p>${escapeHtml(err.message)}</p>
+        </div>
+      `;
+    }
   }
 }
 
@@ -27,7 +30,7 @@ function renderGrid() {
     const selectedStyle = document.getElementById('styleFilter')?.value || '';
     const sortBy = document.getElementById('sortSelect')?.value || 'recent';
 
-    let filtered = allBeers.filter(beer => {
+    let filtered = beers.filter(beer => {
       const name = (beer.beer_name || '').toLowerCase();
       const brewery = (beer.brewery_name || '').toLowerCase();
       const matchesSearch = name.includes(searchTerm) || brewery.includes(searchTerm);
