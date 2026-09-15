@@ -4,6 +4,7 @@ const limit = 18;
 // DOM Elements
 const beerGrid = document.getElementById('beerGrid');
 const searchInput = document.getElementById('searchInput');
+const styleSelect = document.getElementById('styleSelect');
 const searchBtn = document.getElementById('searchBtn');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
@@ -11,8 +12,24 @@ const currentPageLabel = document.getElementById('currentPageLabel');
 const resultsCount = document.getElementById('resultsCount');
 const pageInfo = document.getElementById('pageInfo');
 
-// Fetch beers from local or production API
-async function fetchBeers(page = 1, search = '') {
+// Dynamically populate style options into the dropdown
+async function loadStyles() {
+  try {
+    const res = await fetch('/api/styles');
+    const styles = await res.json();
+    styles.forEach(style => {
+      const option = document.createElement('option');
+      option.value = style;
+      option.textContent = style;
+      styleSelect.appendChild(option);
+    });
+  } catch (err) {
+    console.error('Failed to load styles dropdown:', err);
+  }
+}
+
+// Fetch beers with search and style filter options
+async function fetchBeers(page = 1, search = '', style = '') {
   beerGrid.innerHTML = `
     <div class="col-span-full text-center py-12 text-gray-400">
       Fetching beers from database...
@@ -20,7 +37,7 @@ async function fetchBeers(page = 1, search = '') {
   `;
 
   try {
-    const url = `/api/beers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+    const url = `/api/beers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&style=${encodeURIComponent(style)}`;
     const res = await fetch(url);
     const result = await res.json();
 
@@ -36,7 +53,7 @@ async function fetchBeers(page = 1, search = '') {
   }
 }
 
-// Render beer items to HTML grid
+// Render cards
 function renderBeers(beers) {
   if (!beers || beers.length === 0) {
     beerGrid.innerHTML = `
@@ -62,7 +79,7 @@ function renderBeers(beers) {
   `).join('');
 }
 
-// Update pagination buttons and text
+// Update pagination state
 function updatePagination(pagination) {
   currentPage = pagination.currentPage;
   currentPageLabel.textContent = currentPage;
@@ -76,25 +93,31 @@ function updatePagination(pagination) {
 // Event Listeners
 searchBtn.addEventListener('click', () => {
   currentPage = 1;
-  fetchBeers(currentPage, searchInput.value);
+  fetchBeers(currentPage, searchInput.value, styleSelect.value);
+});
+
+styleSelect.addEventListener('change', () => {
+  currentPage = 1;
+  fetchBeers(currentPage, searchInput.value, styleSelect.value);
 });
 
 searchInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     currentPage = 1;
-    fetchBeers(currentPage, searchInput.value);
+    fetchBeers(currentPage, searchInput.value, styleSelect.value);
   }
 });
 
 prevPageBtn.addEventListener('click', () => {
   if (currentPage > 1) {
-    fetchBeers(currentPage - 1, searchInput.value);
+    fetchBeers(currentPage - 1, searchInput.value, styleSelect.value);
   }
 });
 
 nextPageBtn.addEventListener('click', () => {
-  fetchBeers(currentPage + 1, searchInput.value);
+  fetchBeers(currentPage + 1, searchInput.value, styleSelect.value);
 });
 
-// Initial Load
+// Initialize
+loadStyles();
 fetchBeers();

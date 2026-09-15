@@ -18,11 +18,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// 2. Get All Beers
+// 2. Get Distinct Beer Styles (for UI Filter Dropdown)
+app.get('/api/styles', async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT DISTINCT beer_style FROM beers WHERE beer_style IS NOT NULL AND beer_style != '' ORDER BY beer_style ASC"
+    );
+    res.json(result.rows.map(row => row.beer_style));
+  } catch (err) {
+    console.error('Error fetching styles', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 3. Get All Beers (with pagination, search, and style filtering)
+// Example: /api/beers?search=IPA&style=Stout&page=1&limit=18
 app.get('/api/beers', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = parseInt(req.query.limit) || 18;
     const offset = (page - 1) * limit;
     const search = req.query.search || '';
     const style = req.query.style || '';
@@ -45,10 +59,12 @@ app.get('/api/beers', async (req, res) => {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+    // Fetch total count for pagination metadata
     const countQuery = `SELECT COUNT(*) FROM beers ${whereSql}`;
     const countResult = await db.query(countQuery, params);
     const totalBeers = parseInt(countResult.rows[0].count);
 
+    // Fetch paginated results
     const dataQuery = `
       SELECT * FROM beers 
       ${whereSql} 
@@ -72,7 +88,7 @@ app.get('/api/beers', async (req, res) => {
   }
 });
 
-// 3. Get Single Beer by ID
+// 4. Get Single Beer by ID
 app.get('/api/beers/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -89,7 +105,7 @@ app.get('/api/beers/:id', async (req, res) => {
   }
 });
 
-// Fallback: Serve index.html for any other requests (frontend SPA routing)
+// Fallback: Serve index.html for non-API requests (frontend SPA routing)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
