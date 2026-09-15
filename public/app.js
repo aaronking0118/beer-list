@@ -12,6 +12,11 @@ const beerForm = document.getElementById('beerForm');
 const modalTitle = document.getElementById('modalTitle');
 const modalError = document.getElementById('modalError');
 
+const detailModal = document.getElementById('detailModal');
+const detailTitle = document.getElementById('detailTitle');
+const detailBody = document.getElementById('detailBody');
+const detailEditBtn = document.getElementById('detailEditBtn');
+
 const breweryInput = document.getElementById('brewery_name');
 const breweryDatalist = document.getElementById('breweryList');
 const stateInput = document.getElementById('state');
@@ -120,7 +125,7 @@ function createBeerCardHtml(beer) {
   const displayRank = beer.rank !== null && beer.rank !== undefined ? Number(beer.rank).toFixed(1) : 'N/A';
 
   return `
-    <div class="beer-card">
+    <div class="beer-card" onclick="openDetailModal(${beer.id})">
       <span class="beer-badge">#${badgeNum}</span>
       <h3>${escapeHtml(beer.beer_name)}</h3>
       <div class="brewery-title">${escapeHtml(beer.brewery_name)}</div>
@@ -133,10 +138,54 @@ function createBeerCardHtml(beer) {
       </div>
 
       <div class="card-actions">
-        <button class="btn-edit" onclick="openEditModal(${beer.id})">Edit</button>
+        <button class="btn-edit" onclick="event.stopPropagation(); openEditModal(${beer.id})">Edit</button>
       </div>
     </div>
   `;
+}
+
+// Open Detailed View Modal
+function openDetailModal(id) {
+  const beer = beers.find(b => b.id === id);
+  if (!beer) return;
+
+  const badgeNum = beer.beer_number ?? beer.id ?? '';
+  detailTitle.textContent = `#${badgeNum} - ${beer.beer_name}`;
+
+  const fields = [
+    { label: 'Beer Name', value: beer.beer_name },
+    { label: 'Brewery', value: beer.brewery_name },
+    { label: 'Style', value: beer.style || beer.beer_style },
+    { label: 'Rank', value: beer.rank !== null && beer.rank !== undefined ? Number(beer.rank).toFixed(1) : null },
+    { label: 'ABV', value: beer.abv ? `${Number(beer.abv).toFixed(2)}%` : null },
+    { label: 'IBU', value: beer.ibu },
+    { label: 'SRM', value: beer.srm },
+    { label: 'Location', value: beer.location },
+    { label: 'State', value: beer.state },
+    { label: 'Country', value: beer.country },
+    { label: 'Owned By', value: beer.owned_by },
+    { label: 'Date', value: beer.date || beer.consumption_date ? new Date(beer.date || beer.consumption_date).toLocaleDateString() : null },
+    { label: 'AKA / Alternate Name', value: beer.aka || beer.aka_beer_name },
+    { label: 'Database ID', value: beer.id }
+  ];
+
+  detailBody.innerHTML = fields.map(f => `
+    <div class="detail-item">
+      <span>${escapeHtml(f.label)}</span>
+      <p>${f.value !== null && f.value !== undefined && String(f.value).trim() !== '' ? escapeHtml(String(f.value)) : '<em style="color:#5a6e85;">N/A</em>'}</p>
+    </div>
+  `).join('');
+
+  detailEditBtn.onclick = () => {
+    closeDetailModal();
+    openEditModal(beer.id);
+  };
+
+  detailModal.classList.remove('hidden');
+}
+
+function closeDetailModal() {
+  detailModal.classList.add('hidden');
 }
 
 function clearFormInputs() {

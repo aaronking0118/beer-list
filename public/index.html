@@ -89,12 +89,12 @@
       padding: 0.6rem;
       border-radius: 4px;
       outline: none;
-      color-scheme: dark; /* Force native calendar popup to use dark styling */
+      color-scheme: dark;
     }
 
     input[type="date"]::-calendar-picker-indicator {
       cursor: pointer;
-      filter: invert(0.8); /* Ensures clear visibility of calendar icon */
+      filter: invert(0.8);
     }
 
     input:focus, select:focus {
@@ -113,6 +113,13 @@
       border-radius: 8px;
       padding: 1.25rem;
       position: relative;
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .beer-card:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
     }
 
     .beer-badge {
@@ -165,7 +172,7 @@
       font-weight: 600;
     }
 
-    /* Modal */
+    /* Modal Styles */
     .modal {
       position: fixed;
       top: 0;
@@ -238,6 +245,36 @@
       border-radius: 4px;
       margin-bottom: 1rem;
     }
+
+    /* Detail View Modal Grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .detail-item {
+      background-color: var(--bg-input);
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .detail-item span {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+    }
+
+    .detail-item p {
+      font-size: 1rem;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
   </style>
 </head>
 <body>
@@ -271,7 +308,7 @@
     <main class="beer-grid" id="beerGrid"></main>
   </div>
 
-  <!-- Modal -->
+  <!-- Add/Edit Modal -->
   <div id="beerModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
@@ -354,6 +391,22 @@
 
         <button type="submit" class="btn-submit">Save Beer</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Detailed View Modal -->
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="detailTitle">Beer Details</h2>
+        <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+      </div>
+
+      <div class="detail-grid" id="detailBody"></div>
+
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <button id="detailEditBtn" class="btn-submit">Edit Beer</button>
+      </div>
     </div>
   </div>
 
