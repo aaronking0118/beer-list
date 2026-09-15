@@ -1,274 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Beer Explorer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            gray: {
-              750: '#262f3d',
-              850: '#17202e',
-              950: '#0b0f17',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beer Tracker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans relative">
+<body>
 
-  <!-- Datalist for Brewery Auto-Suggestion -->
-  <datalist id="breweriesDatalist"></datalist>
-
-  <!-- Toast Notification Container -->
-  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-  <!-- Header Section -->
-  <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">🍺</span>
-        <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
-          Beer Explorer
-        </h1>
-      </div>
-      <button 
-        id="openAddBeerModal" 
-        class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-emerald-900/20 flex items-center gap-1.5"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Beer
-      </button>
-    </div>
+  <header class="container">
+    <h1>Beer Log</h1>
+    <button class="btn btn-warning" onclick="openAddModal()">+ Add New Beer</button>
   </header>
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
-    
-    <!-- Controls Bar -->
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-8 shadow-xl">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="md:col-span-1">
-          <input 
-            type="text" 
-            id="searchInput" 
-            placeholder="Search beer or brewery..." 
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-amber-500"
-          />
-        </div>
-        <div>
-          <select 
-            id="styleSelect" 
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-          >
-            <option value="">All Styles</option>
-          </select>
-        </div>
-        <div>
-          <select 
-            id="sortSelect" 
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-          >
-            <option value="brewery_beer_name-asc">Brewery, then Beer Name (A-Z)</option>
-            <option value="brewery_beer_name-desc">Brewery, then Beer Name (Z-A)</option>
-            <option value="beer_name-asc">Beer Name (A-Z)</option>
-            <option value="beer_name-desc">Beer Name (Z-A)</option>
-            <option value="beer_number-desc">Beer # (Highest First)</option>
-            <option value="beer_number-asc">Beer # (Lowest First)</option>
-            <option value="rank-desc">Rank (Highest First)</option>
-            <option value="rank-asc">Rank (Lowest First)</option>
-            <option value="abv-desc">ABV (High to Low)</option>
-            <option value="abv-asc">ABV (Low to High)</option>
-          </select>
-        </div>
-        <div>
-          <button 
-            id="searchBtn" 
-            class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition"
-          >
-            Search
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Status Bar -->
-    <div class="flex justify-between items-center mb-4 text-xs text-gray-400">
-      <span id="resultsCount">Loading records...</span>
-      <span id="pageInfo">Page 1</span>
-    </div>
-
-    <!-- Beer Card Grid -->
-    <div id="beerGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[400px]"></div>
-
-    <!-- Pagination -->
-    <div class="mt-8 flex justify-center items-center space-x-4">
-      <button id="prevPage" disabled class="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm border border-gray-700 transition">Previous</button>
-      <span id="currentPageLabel" class="text-sm font-semibold text-amber-500">1</span>
-      <button id="nextPage" disabled class="bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm border border-gray-700 transition">Next</button>
-    </div>
+  <main class="container">
+    <div id="beer-list" class="beer-grid"></div>
   </main>
 
-  <!-- View Beer Detail Modal -->
-  <div id="beerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-      <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
-      <div id="modalContent"></div>
-    </div>
-  </div>
+  <!-- ADD NEW BEER MODAL -->
+  <div class="modal-overlay" id="add-modal" style="display: none;">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeAddModal()">&times;</button>
+      <h2 class="modal-title warning-text">Add New Beer Entry</h2>
 
-  <!-- Add New Beer Modal -->
-  <div id="addBeerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button id="closeAddModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
-      <h2 class="text-xl font-bold text-amber-500 mb-4">Add New Beer Entry</h2>
-
-      <form id="addBeerForm" class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Beer Name *</label>
-            <input type="text" name="beer_name" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+      <form id="add-beer-form" onsubmit="handleAddBeer(event)">
+        <!-- Row 1: Beer Name & Brewery -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="add-beer-name">Beer Name *</label>
+            <input type="text" id="add-beer-name" required placeholder="Beer Name">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Brewery Name *</label>
-            <input type="text" id="addBreweryInput" name="brewery_name" list="breweriesDatalist" required placeholder="Type or select brewery..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="add-brewery-name">Brewery Name *</label>
+            <input type="text" id="add-brewery-name" list="brewery-list" required placeholder="Type or select brewery...">
+            <datalist id="brewery-list"></datalist>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Style</label>
-            <input type="text" name="beer_style" placeholder="e.g. Pilsner" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        <!-- Row 2: Style & Rank -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="add-style">Style</label>
+            <input type="text" id="add-style" placeholder="e.g. Pilsner">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Rank (Decimal)</label>
-            <input type="number" step="0.1" min="0" max="5" name="rank" placeholder="e.g. 4.5" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">ABV (%)</label>
-            <input type="number" step="0.1" name="abv" placeholder="5.0" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">IBU</label>
-            <input type="number" name="ibu" placeholder="30" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">SRM</label>
-            <input type="number" name="srm" placeholder="5" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="add-rank">Rank (Decimal)</label>
+            <input type="number" step="0.1" id="add-rank" placeholder="e.g. 4.5">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">State</label>
-            <input type="text" id="addStateInput" name="state" placeholder="e.g. Oregon" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        <!-- Row 3: ABV, IBU, SRM -->
+        <div class="form-row three-col">
+          <div class="form-group">
+            <label for="add-abv">ABV (%)</label>
+            <input type="number" step="0.1" id="add-abv" placeholder="5.0">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Country</label>
-            <input type="text" id="addCountryInput" name="country" placeholder="e.g. USA" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="add-ibu">IBU</label>
+            <input type="number" id="add-ibu" placeholder="30">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Owned By</label>
-            <input type="text" id="addOwnedByInput" name="owned_by" placeholder="Parent Co." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="add-srm">SRM</label>
+            <input type="number" id="add-srm" placeholder="5">
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 mb-1">AKA / Alternate Name</label>
-          <input type="text" name="aka_beer_name" placeholder="Optional variant name" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        <!-- Row 4: State & Country -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="add-state">State</label>
+            <input type="text" id="add-state" placeholder="e.g. Texas">
+          </div>
+          <div class="form-group">
+            <label for="add-country">Country</label>
+            <input type="text" id="add-country" placeholder="e.g. USA">
+          </div>
         </div>
 
-        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg text-sm transition mt-2 shadow-lg shadow-amber-900/30">
-          Save Beer Entry
-        </button>
+        <!-- Row 5: Date & Location -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="add-date">Date</label>
+            <input type="date" id="add-date">
+          </div>
+          <div class="form-group">
+            <label for="add-location">Location</label>
+            <input type="text" id="add-location" placeholder="e.g. Taproom, Bar, Home">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-warning full-width mt-4">Save Beer Entry</button>
       </form>
     </div>
   </div>
 
-  <!-- Edit Beer Modal -->
-  <div id="editBeerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button id="closeEditModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">&times;</button>
-      <h2 class="text-xl font-bold text-amber-500 mb-4">Edit Beer Entry</h2>
+  <!-- EDIT BEER MODAL -->
+  <div class="modal-overlay" id="edit-modal" style="display: none;">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      <h2 class="modal-title primary-text">Edit Beer Entry</h2>
 
-      <form id="editBeerForm" class="space-y-4">
-        <input type="hidden" name="id" id="editBeerId">
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Beer Name *</label>
-            <input type="text" id="editBeerName" name="beer_name" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+      <form id="edit-beer-form" onsubmit="handleEditBeer(event)">
+        <input type="hidden" id="edit-beer-id">
+
+        <!-- Row 1: Beer Name & Brewery -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-beer-name">Beer Name *</label>
+            <input type="text" id="edit-beer-name" required>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Brewery Name *</label>
-            <input type="text" id="editBreweryName" name="brewery_name" list="breweriesDatalist" required class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="edit-brewery-name">Brewery Name *</label>
+            <input type="text" id="edit-brewery-name" list="brewery-list-edit" required>
+            <datalist id="brewery-list-edit"></datalist>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Style</label>
-            <input type="text" id="editBeerStyle" name="beer_style" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        <!-- Row 2: Style & Rank -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-style">Style</label>
+            <input type="text" id="edit-style">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Rank (Decimal)</label>
-            <input type="number" step="0.1" min="0" max="5" id="editRank" name="rank" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">ABV (%)</label>
-            <input type="number" step="0.1" id="editAbv" name="abv" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">IBU</label>
-            <input type="number" id="editIbu" name="ibu" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">SRM</label>
-            <input type="number" id="editSrm" name="srm" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="edit-rank">Rank (Decimal)</label>
+            <input type="number" step="0.1" id="edit-rank">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">State</label>
-            <input type="text" id="editState" name="state" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        <!-- Row 3: ABV, IBU, SRM -->
+        <div class="form-row three-col">
+          <div class="form-group">
+            <label for="edit-abv">ABV (%)</label>
+            <input type="number" step="0.1" id="edit-abv">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Country</label>
-            <input type="text" id="editCountry" name="country" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="edit-ibu">IBU</label>
+            <input type="number" id="edit-ibu">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">Owned By</label>
-            <input type="text" id="editOwnedBy" name="owned_by" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <div class="form-group">
+            <label for="edit-srm">SRM</label>
+            <input type="number" id="edit-srm">
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 mb-1">AKA / Alternate Name</label>
-          <input type="text" id="editAka" name="aka_beer_name" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+        <!-- Row 4: State, Country, Owned By -->
+        <div class="form-row three-col">
+          <div class="form-group">
+            <label for="edit-state">State</label>
+            <input type="text" id="edit-state">
+          </div>
+          <div class="form-group">
+            <label for="edit-country">Country</label>
+            <input type="text" id="edit-country">
+          </div>
+          <div class="form-group">
+            <label for="edit-owned-by">Owned By</label>
+            <input type="text" id="edit-owned-by">
+          </div>
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-sm transition mt-2 shadow-lg shadow-blue-900/30">
-          Update Beer Entry
-        </button>
+        <!-- Row 5: Date & Location -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-date">Date</label>
+            <input type="date" id="edit-date">
+          </div>
+          <div class="form-group">
+            <label for="edit-location">Location</label>
+            <input type="text" id="edit-location" placeholder="e.g. Taproom, Bar, Home">
+          </div>
+        </div>
+
+        <!-- Row 6: AKA & Collaborators -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-aka">AKA / Alternate Name</label>
+            <input type="text" id="edit-aka" placeholder="Optional variant name">
+          </div>
+          <div class="form-group">
+            <label for="edit-collaborators">Collaborators</label>
+            <input type="text" id="edit-collaborators" placeholder="Collaborating breweries">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary full-width mt-4">Update Beer Entry</button>
       </form>
     </div>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

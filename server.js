@@ -1,331 +1,117 @@
-require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const db = require('./db');
-
+const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Health Check Endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+// PostgreSQL Connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/beer_db'
 });
 
-// Get Unique Breweries (With Default State, Country, and Owned By)
+app.use(express.json());
+app.use(express.static('public'));
+
+// GET all beers
+app.get('/api/beers', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM beers ORDER BY id DESC');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET unique brewery list for auto-suggestions
 app.get('/api/breweries', async (req, res) => {
   try {
     const query = `
-      SELECT DISTINCT ON (LOWER(TRIM(brewery_name)))
-        brewery_name,
-        state,
-        country,
-        owned_by
-      FROM beers
-      WHERE brewery_name IS NOT NULL AND TRIM(brewery_name) != ''
-      ORDER BY LOWER(TRIM(brewery_name)) ASC;
+      SELECT DISTINCT ON (LOWER(TRIM(brewery_name))) 
+        brewery_name, state, country, owned_by 
+      FROM beers 
+      WHERE brewery_name IS NOT NULL AND brewery_name != '' 
+      ORDER BY LOWER(TRIM(brewery_name));
     `;
-    const result = await db.query(query);
-    res.json(result.rows);
+    const { rows } = await pool.query(query);
+    res.json(rows);
   } catch (err) {
-    console.error('Error fetching breweries list:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Get Unique Beer Styles Dropdown Options
-app.get('/api/styles', async (req, res) => {
-  try {
-    const result = await db.query(
-      "SELECT DISTINCT beer_style FROM beers WHERE beer_style IS NOT NULL AND TRIM(beer_style) != '' ORDER BY beer_style ASC LIMIT 100"
-    );
-    
-    let styles = result.rows.map(row => row.beer_style).filter(Boolean);
-
-    if (styles.length === 0) {
-      styles = [
-        "Lager", "Pilsner", "IPA", "India Pale Ale", "Stout", 
-        "Porter", "Ale", "Pale Ale", "Wheat Beer", "Radler", 
-        "Sour", "Saison", "Amber Ale"
-      ];
-    }
-
-    res.json(styles);
-  } catch (err) {
-    console.error('Error fetching styles:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get All Beers (Supports Pagination, Search, Style Filter, & Multi-Column Sorting)
-app.get('/api/beers', async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 18;
-    const offset = (page - 1) * limit;
-    const search = req.query.search || '';
-    const style = req.query.style || '';
-    const sortBy = req.query.sortBy || 'brewery_beer_name';
-    const order = (req.query.order || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-
-    let sortClause = `brewery_name ${order}, beer_name ${order}`;
-
-    if (sortBy === 'beer_number') {
-      sortClause = `beer_number ${order} NULLS LAST`;
-    } else if (sortBy === 'rank') {
-      sortClause = `rank ${order} NULLS LAST`;
-    } else if (sortBy === 'abv') {
-      sortClause = `abv ${order} NULLS LAST`;
-    } else if (sortBy === 'beer_name') {
-      sortClause = `beer_name ${order}`;
-    } else if (sortBy === 'brewery_beer_name') {
-      sortClause = `brewery_name ${order}, beer_name ${order}`;
-    }
-
-    let whereClauses = [];
-    let params = [];
-    let paramIdx = 1;
-
-    if (search) {
-      whereClauses.push(`(beer_name ILIKE $${paramIdx} OR brewery_name ILIKE $${paramIdx})`);
-      params.push(`%${search}%`);
-      paramIdx++;
-    }
-
-    if (style) {
-      whereClauses.push(`beer_style ILIKE $${paramIdx}`);
-      params.push(`%${style}%`);
-      paramIdx++;
-    }
-
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    const countQuery = `SELECT COUNT(*) FROM beers ${whereSql}`;
-    const countResult = await db.query(countQuery, params);
-    const totalBeers = parseInt(countResult.rows[0].count, 10);
-
-    const dataQuery = `
-      SELECT * FROM beers 
-      ${whereSql} 
-      ORDER BY ${sortClause}, id ASC 
-      LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
-    `;
-    const dataResult = await db.query(dataQuery, [...params, limit, offset]);
-
-    res.json({
-      data: dataResult.rows,
-      pagination: {
-        totalItems: totalBeers,
-        currentPage: page,
-        totalPages: Math.ceil(totalBeers / limit) || 1,
-        pageSize: limit
-      }
-    });
-  } catch (err) {
-    console.error('Error executing beers query:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get Single Beer Details by ID
-app.get('/api/beers/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await db.query('SELECT * FROM beers WHERE id = $1', [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Beer not found' });
-    }
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error fetching beer by ID:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Create a New Beer Entry (With Duplicate Check & Auto-Increment)
+// POST Add new beer (11 fields)
 app.post('/api/beers', async (req, res) => {
+  const {
+    beer_name, brewery_name, style, rank, abv,
+    ibu, srm, state, country, date, location
+  } = req.body;
+
+  const query = `
+    INSERT INTO beers (
+      beer_name, brewery_name, style, rank, abv,
+      ibu, srm, state, country, date, location
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING *;
+  `;
+
+  const values = [
+    beer_name, brewery_name, style || null, rank || null, abv || null,
+    ibu || null, srm || null, state || null, country || null, date || null, location || null
+  ];
+
   try {
-    const {
-      beer_name,
-      brewery_name,
-      aka_beer_name,
-      beer_style,
-      abv,
-      ibu,
-      srm,
-      country,
-      state,
-      owned_by,
-      collaborators,
-      rank,
-      consumption_date,
-      location
-    } = req.body;
-
-    if (!beer_name || !brewery_name) {
-      return res.status(400).json({ error: 'Beer name and brewery name are required.' });
-    }
-
-    const duplicateCheck = await db.query(
-      'SELECT id, beer_number FROM beers WHERE LOWER(TRIM(beer_name)) = LOWER(TRIM($1)) AND LOWER(TRIM(brewery_name)) = LOWER(TRIM($2))',
-      [beer_name, brewery_name]
-    );
-
-    if (duplicateCheck.rows.length > 0) {
-      return res.status(409).json({ 
-        error: `Duplicate Entry: "${beer_name}" by "${brewery_name}" already exists as Beer #${duplicateCheck.rows[0].beer_number}.` 
-      });
-    }
-
-    const maxNumResult = await db.query('SELECT MAX(beer_number) AS max_num FROM beers');
-    const maxNum = maxNumResult.rows[0].max_num;
-    const nextBeerNumber = maxNum ? parseInt(maxNum, 10) + 1 : 1;
-
-    const query = `
-      INSERT INTO beers (
-        beer_name, brewery_name, aka_beer_name, beer_style, abv, ibu, srm,
-        country, state, owned_by, collaborators, beer_number, rank,
-        consumption_date, location
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING *;
-    `;
-
-    const values = [
-      beer_name.trim(),
-      brewery_name.trim(),
-      aka_beer_name || null,
-      beer_style || null,
-      abv && abv.toString().trim() !== '' ? parseFloat(abv) : null,
-      ibu && ibu.toString().trim() !== '' ? parseInt(ibu, 10) : null,
-      srm && srm.toString().trim() !== '' ? parseInt(srm, 10) : null,
-      country || null,
-      state || null,
-      owned_by || null,
-      collaborators || null,
-      nextBeerNumber,
-      rank && rank.toString().trim() !== '' ? parseFloat(rank) : null,
-      consumption_date || null,
-      location || null
-    ];
-
-    const result = await db.query(query, values);
-    res.status(201).json(result.rows[0]);
+    const { rows } = await pool.query(query, values);
+    res.status(201).json(rows[0]);
   } catch (err) {
-    console.error('Error creating new beer:', err);
-    res.status(500).json({ error: 'Failed to create beer entry.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Update Full Beer Entry by ID
+// PUT Edit existing beer (14 fields)
 app.put('/api/beers/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    beer_name, brewery_name, style, rank, abv,
+    ibu, srm, state, country, owned_by, date,
+    location, aka, collaborators
+  } = req.body;
+
+  const query = `
+    UPDATE beers SET 
+      beer_name = $1,
+      brewery_name = $2,
+      style = $3,
+      rank = $4,
+      abv = $5,
+      ibu = $6,
+      srm = $7,
+      state = $8,
+      country = $9,
+      owned_by = $10,
+      date = $11,
+      location = $12,
+      aka = $13,
+      collaborators = $14
+    WHERE id = $15
+    RETURNING *;
+  `;
+
+  const values = [
+    beer_name, brewery_name, style || null, rank || null, abv || null,
+    ibu || null, srm || null, state || null, country || null, owned_by || null,
+    date || null, location || null, aka || null, collaborators || null, id
+  ];
+
   try {
-    const { id } = req.params;
-    const {
-      beer_name,
-      brewery_name,
-      aka_beer_name,
-      beer_style,
-      abv,
-      ibu,
-      srm,
-      country,
-      state,
-      owned_by,
-      collaborators,
-      rank,
-      consumption_date,
-      location
-    } = req.body;
-
-    if (!beer_name || !brewery_name) {
-      return res.status(400).json({ error: 'Beer name and brewery name are required.' });
+    const { rows } = await pool.query(query, values);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Beer entry not found' });
     }
-
-    const query = `
-      UPDATE beers 
-      SET 
-        beer_name = $1, 
-        brewery_name = $2, 
-        aka_beer_name = $3, 
-        beer_style = $4, 
-        abv = $5, 
-        ibu = $6, 
-        srm = $7, 
-        country = $8, 
-        state = $9, 
-        owned_by = $10, 
-        collaborators = $11, 
-        rank = $12, 
-        consumption_date = $13, 
-        location = $14
-      WHERE id = $15 
-      RETURNING *;
-    `;
-
-    const values = [
-      beer_name.trim(),
-      brewery_name.trim(),
-      aka_beer_name || null,
-      beer_style || null,
-      abv && abv.toString().trim() !== '' ? parseFloat(abv) : null,
-      ibu && ibu.toString().trim() !== '' ? parseInt(ibu, 10) : null,
-      srm && srm.toString().trim() !== '' ? parseInt(srm, 10) : null,
-      country || null,
-      state || null,
-      owned_by || null,
-      collaborators || null,
-      rank && rank.toString().trim() !== '' ? parseFloat(rank) : null,
-      consumption_date || null,
-      location || null,
-      id
-    ];
-
-    const result = await db.query(query, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Beer not found.' });
-    }
-
-    res.json(result.rows[0]);
+    res.json(rows[0]);
   } catch (err) {
-    console.error('Error updating beer:', err);
-    res.status(500).json({ error: 'Failed to update beer entry.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Delete a Beer Entry by ID
-app.delete('/api/beers/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await db.query('DELETE FROM beers WHERE id = $1 RETURNING *', [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Beer not found.' });
-    }
-
-    res.json({ message: 'Beer deleted successfully', deletedBeer: result.rows[0] });
-  } catch (err) {
-    console.error('Error deleting beer:', err);
-    res.status(500).json({ error: 'Failed to delete beer entry.' });
-  }
-});
-
-// Single Page App Fallback
-app.get('{*path}', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Start Express Server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
