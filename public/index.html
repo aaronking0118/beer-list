@@ -63,6 +63,16 @@
 
   </div>
 
+  <!-- Beer Detail Modal -->
+  <div id="beerModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold p-1">✕</button>
+      <div id="modalContent">
+        <!-- Dynamic content injected here -->
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
