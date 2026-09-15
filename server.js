@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./db');
 
 const app = express();
@@ -10,15 +11,14 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static frontend files from the 'public' directory
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 1. Health Check Route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// 2. Get All Beers (with pagination, search, and style filtering)
-// Example: /api/beers?search=IPA&page=1&limit=20
+// 2. Get All Beers
 app.get('/api/beers', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -45,12 +45,10 @@ app.get('/api/beers', async (req, res) => {
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Fetch total count for pagination metadata
     const countQuery = `SELECT COUNT(*) FROM beers ${whereSql}`;
     const countResult = await db.query(countQuery, params);
     const totalBeers = parseInt(countResult.rows[0].count);
 
-    // Fetch paginated results
     const dataQuery = `
       SELECT * FROM beers 
       ${whereSql} 
@@ -89,6 +87,11 @@ app.get('/api/beers/:id', async (req, res) => {
     console.error('Error fetching beer', err);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Fallback: Serve index.html for any other requests (frontend SPA routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
