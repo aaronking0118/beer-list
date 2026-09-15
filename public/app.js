@@ -8,6 +8,7 @@ const searchInput = document.getElementById('searchInput');
 const styleFilter = document.getElementById('styleFilter');
 const sortSelect = document.getElementById('sortSelect');
 const quickFilter = document.getElementById('quickFilter');
+const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 const beerModal = document.getElementById('beerModal');
 const beerForm = document.getElementById('beerForm');
 const modalTitle = document.getElementById('modalTitle');
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (styleFilter) styleFilter.addEventListener('change', renderGrid);
   if (sortSelect) sortSelect.addEventListener('change', renderGrid);
   if (quickFilter) quickFilter.addEventListener('change', renderGrid);
+  if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearFilters);
   if (beerForm) beerForm.addEventListener('submit', handleFormSubmit);
   if (breweryInput) breweryInput.addEventListener('input', handleBreweryAutofill);
 });
@@ -97,6 +99,14 @@ function populateStyleFilter() {
     opt.textContent = style;
     styleFilter.appendChild(opt);
   });
+}
+
+function clearFilters() {
+  if (searchInput) searchInput.value = '';
+  if (styleFilter) styleFilter.value = '';
+  if (sortSelect) sortSelect.value = 'recent';
+  if (quickFilter) quickFilter.value = '';
+  renderGrid();
 }
 
 function updateStats() {

@@ -49,6 +49,9 @@
       border-radius: 6px;
       cursor: pointer;
     }
+    .btn-secondary:hover {
+      background-color: #3f4859;
+    }
     .controls-bar {
       display: flex;
       flex-wrap: wrap;
@@ -58,6 +61,7 @@
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
+      align-items: flex-end;
     }
     .control-group {
       display: flex;
@@ -281,6 +285,10 @@
           <option value="">All Beers</option>
           <option value="top-rated">Top Rated (4.0+ ★)</option>
         </select>
+      </div>
+      <!-- Clear Filters Button Added Here -->
+      <div class="control-group" style="flex: 0 0 auto; min-width: auto;">
+        <button type="button" id="clearFiltersBtn" class="btn-secondary" style="height: 38px; padding: 0 1rem;">Clear Filters</button>
       </div>
     </div>
 
