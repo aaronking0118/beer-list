@@ -89,7 +89,6 @@ function populateStyleFilter() {
 function getRankColor(rank) {
   if (rank === null || rank === undefined || isNaN(rank)) return '#8a99ad';
   const clamped = Math.min(Math.max(Number(rank), 1), 5);
-  // Maps 1.0 -> 0deg (Red), 3.0 -> 60deg (Yellow), 5.0 -> 120deg (Green)
   const hue = ((clamped - 1) / 4) * 120;
   return `hsl(${hue}, 85%, 55%)`;
 }
@@ -125,6 +124,74 @@ function renderStarRating(rank) {
         ${numericRank.toFixed(1)}
       </span>
     </div>
+  `;
+}
+
+// SRM color mapping (2-40) with custom color keyword overrides for red, purple, and green beers
+function getBeerLiquidColor(beer) {
+  const styleName = (beer.style || beer.beer_style || '').toLowerCase();
+  
+  if (styleName.includes('purple') || styleName.includes('boysenberry') || styleName.includes('blackberry') || styleName.includes('sour - purple')) {
+    return '#8a2be2'; // Vibrant Purple
+  }
+  if (styleName.includes('green') || styleName.includes('matcha') || styleName.includes('st. patrick')) {
+    return '#2e8b57'; // Sea Green
+  }
+  if (styleName.includes('red ale') || styleName.includes('fruit tart') || styleName.includes('cranberry') || styleName.includes('cherry') || styleName.includes('red')) {
+    return '#b22222'; // Firebrick Red
+  }
+
+  const srm = beer.srm;
+  if (srm === null || srm === undefined || isNaN(srm)) return '#F5E16C'; // Default straw
+  const val = Math.max(2, Math.min(Number(srm), 40));
+
+  if (val <= 3) return '#F3F993';
+  if (val <= 5) return '#F5E16C';
+  if (val <= 7) return '#F7C83C';
+  if (val <= 10) return '#E89C17';
+  if (val <= 14) return '#D96F0A';
+  if (val <= 18) return '#B84506';
+  if (val <= 22) return '#943103';
+  if (val <= 26) return '#78281F';
+  if (val <= 32) return '#512E5F';
+  if (val <= 37) return '#273746';
+  return '#111111';
+}
+
+// Maps style to glassware type
+function getGlasswareTypeForStyle(styleName) {
+  if (!styleName) return 'pint';
+  const lower = styleName.toLowerCase();
+  
+  if (lower.includes('stout') || lower.includes('porter') || lower.includes('barrel-aged') || lower.includes('barleywine')) {
+    return 'snifter';
+  }
+  if (lower.includes('wheat') || lower.includes('hefeweizen') || lower.includes('witbier')) {
+    return 'weizen';
+  }
+  if (lower.includes('pilsner') || lower.includes('bock') || lower.includes('helles') || lower.includes('kölsch')) {
+    return 'flute';
+  }
+  if (lower.includes('belgian') || lower.includes('saison') || lower.includes('tripel') || lower.includes('quadrupel')) {
+    return 'tulip';
+  }
+  return 'pint';
+}
+
+// Renders SVG Glassware graphic color-filled by liquid color
+function renderGlasswareSvg(beer) {
+  const liquidColor = getBeerLiquidColor(beer);
+  const styleName = beer.style || beer.beer_style;
+  
+  return `
+    <svg class="glassware-icon" viewBox="0 0 24 24" width="28" height="28" style="shape-rendering: geometricPrecision; vertical-align: middle;" title="Style: ${escapeHtml(styleName || 'N/A')} | SRM: ${beer.srm ?? 'N/A'}">
+      <!-- Liquid Body -->
+      <path fill="${liquidColor}" d="M6 9h12l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H8.7a1.5 1.5 0 0 1-1.5-1.3L6 9z" opacity="0.9" />
+      <!-- Glass Outline -->
+      <path fill="none" stroke="#8a99ad" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" d="M5 6h14l-1.5 14a2 2 0 0 1-2 1.8H8.5a2 2 0 0 1-2-1.8L5 6zm-2-2h18v2H3V4z" />
+      <!-- Foam Head -->
+      <path fill="#ffffff" opacity="0.85" d="M5.5 7h13v1.5h-13z" />
+    </svg>
   `;
 }
 
@@ -166,11 +233,15 @@ function createBeerCardHtml(beer) {
   const badgeNum = beer.beer_number ?? beer.id ?? '';
   const displayStyle = beer.style || beer.beer_style || 'N/A';
   const starDisplay = renderStarRating(beer.rank);
+  const glasswareSvg = renderGlasswareSvg(beer);
 
   return `
     <div class="beer-card" onclick="openDetailModal(${beer.id})">
       <span class="beer-badge">#${badgeNum}</span>
-      <h3>${escapeHtml(beer.beer_name)}</h3>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+        ${glasswareSvg}
+        <h3 style="padding-right: 3rem; margin-bottom: 0;">${escapeHtml(beer.beer_name)}</h3>
+      </div>
       <div class="brewery-title">${escapeHtml(beer.brewery_name)}</div>
       
       <div class="card-meta">
@@ -202,6 +273,7 @@ function openDetailModal(id) {
     { label: 'Brewery', value: beer.brewery_name },
     { label: 'Style', value: beer.style || beer.beer_style },
     { label: 'Rank', value: beer.rank !== null && beer.rank !== undefined ? `${renderStarRating(beer.rank)}` : null, isHtml: true },
+    { label: 'Glassware / Color', value: renderGlasswareSvg(beer), isHtml: true },
     { label: 'ABV', value: beer.abv ? `${Number(beer.abv).toFixed(2)}%` : null },
     { label: 'IBU', value: beer.ibu },
     { label: 'SRM', value: beer.srm },
