@@ -1,4 +1,5 @@
 let beers = [];
+let breweries = [];
 let editingBeerId = null;
 
 // DOM Elements
@@ -11,17 +12,26 @@ const beerForm = document.getElementById('beerForm');
 const modalTitle = document.getElementById('modalTitle');
 const modalError = document.getElementById('modalError');
 
-// Initialize Application
+const breweryInput = document.getElementById('brewery_name');
+const breweryDatalist = document.getElementById('breweryList');
+const stateInput = document.getElementById('state');
+const countryInput = document.getElementById('country');
+const ownedByInput = document.getElementById('owned_by');
+const akaContainer = document.getElementById('akaContainer');
+
 document.addEventListener('DOMContentLoaded', () => {
   fetchBeers();
+  fetchBreweries();
 
   searchInput.addEventListener('input', renderGrid);
   styleFilter.addEventListener('change', renderGrid);
   sortSelect.addEventListener('change', renderGrid);
   beerForm.addEventListener('submit', handleFormSubmit);
+
+  // Auto-populate state, country, owned_by when user selects or types existing brewery
+  breweryInput.addEventListener('input', handleBreweryAutofill);
 });
 
-// Fetch All Beers
 async function fetchBeers() {
   try {
     const res = await fetch('/api/beers');
@@ -34,7 +44,34 @@ async function fetchBeers() {
   }
 }
 
-// Populate Filter Dropdown
+// Fetch breweries and populate datalist
+async function fetchBreweries() {
+  try {
+    const res = await fetch('/api/breweries');
+    if (!res.ok) throw new Error('Failed to load breweries');
+    breweries = await res.json();
+
+    breweryDatalist.innerHTML = breweries.map(b => 
+      `<option value="${escapeHtml(b.brewery_name)}"></option>`
+    ).join('');
+  } catch (err) {
+    console.error('Error fetching breweries:', err);
+  }
+}
+
+// Auto-populate location metadata when selecting brewery
+function handleBreweryAutofill() {
+  const currentVal = breweryInput.value.trim().toLowerCase();
+  if (!currentVal) return;
+
+  const match = breweries.find(b => (b.brewery_name || '').toLowerCase() === currentVal);
+  if (match) {
+    if (match.state) stateInput.value = match.state;
+    if (match.country) countryInput.value = match.country;
+    if (match.owned_by) ownedByInput.value = match.owned_by;
+  }
+}
+
 function populateStyleFilter() {
   const styles = [...new Set(beers.map(b => b.style || b.beer_style).filter(Boolean))].sort();
   styleFilter.innerHTML = '<option value="">All Styles</option>';
@@ -46,7 +83,6 @@ function populateStyleFilter() {
   });
 }
 
-// Render Card Grid
 function renderGrid() {
   const searchVal = searchInput.value.toLowerCase().trim();
   const selectedStyle = styleFilter.value;
@@ -63,7 +99,6 @@ function renderGrid() {
     return matchesSearch && matchesStyle;
   });
 
-  // Sorting Logic
   filtered.sort((a, b) => {
     const numA = Number(a.beer_number ?? a.id);
     const numB = Number(b.beer_number ?? b.id);
@@ -71,7 +106,6 @@ function renderGrid() {
     if (sortBy === 'recent') return numB - numA;
     if (sortBy === 'rank-desc') return (b.rank || 0) - (a.rank || 0);
     if (sortBy === 'name-asc') return (a.beer_name || '').localeCompare(b.beer_name || '');
-    if (sortBy === 'number-asc') return numB - numA;
     return 0;
   });
 
@@ -83,7 +117,6 @@ function renderGrid() {
   beerGrid.innerHTML = filtered.map(beer => createBeerCardHtml(beer)).join('');
 }
 
-// Generate Beer Card HTML matching exact current UI styling
 function createBeerCardHtml(beer) {
   const badgeNum = beer.beer_number ?? beer.id ?? '';
   const displayStyle = beer.style || beer.beer_style || 'N/A';
@@ -92,7 +125,6 @@ function createBeerCardHtml(beer) {
   return `
     <div class="beer-card">
       <span class="beer-badge">#${badgeNum}</span>
-
       <h3>${escapeHtml(beer.beer_name)}</h3>
       <div class="brewery-title">${escapeHtml(beer.brewery_name)}</div>
       
@@ -110,7 +142,6 @@ function createBeerCardHtml(beer) {
   `;
 }
 
-// Modal Handlers
 function openModal(mode, beerId = null) {
   modalError.classList.add('hidden');
   modalError.textContent = '';
@@ -120,12 +151,15 @@ function openModal(mode, beerId = null) {
     editingBeerId = null;
     document.getElementById('beerId').value = '';
     modalTitle.textContent = 'Add New Beer';
+    akaContainer.classList.add('hidden'); // Hide AKA on add
   } else if (mode === 'edit') {
     editingBeerId = beerId;
     const beer = beers.find(b => b.id === beerId);
     if (!beer) return;
 
     modalTitle.textContent = 'Edit Beer Entry';
+    akaContainer.classList.remove('hidden'); // Show AKA on edit
+
     document.getElementById('beerId').value = beer.id;
     document.getElementById('beer_name').value = beer.beer_name || '';
     document.getElementById('brewery_name').value = beer.brewery_name || '';
@@ -136,6 +170,7 @@ function openModal(mode, beerId = null) {
     document.getElementById('srm').value = beer.srm ?? '';
     document.getElementById('state').value = beer.state || '';
     document.getElementById('country').value = beer.country || '';
+    document.getElementById('owned_by').value = beer.owned_by || '';
     document.getElementById('location').value = beer.location || '';
     document.getElementById('aka').value = beer.aka || beer.aka_beer_name || '';
 
@@ -157,7 +192,6 @@ function closeModal() {
   beerModal.classList.add('hidden');
 }
 
-// Submit Form
 async function handleFormSubmit(e) {
   e.preventDefault();
   modalError.classList.add('hidden');
@@ -172,6 +206,7 @@ async function handleFormSubmit(e) {
     srm: document.getElementById('srm').value,
     state: document.getElementById('state').value,
     country: document.getElementById('country').value,
+    owned_by: document.getElementById('owned_by').value,
     date: document.getElementById('date').value,
     location: document.getElementById('location').value,
     aka: document.getElementById('aka').value
@@ -189,13 +224,11 @@ async function handleFormSubmit(e) {
     });
 
     const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to save beer entry.');
-    }
+    if (!res.ok) throw new Error(data.error || 'Failed to save beer entry.');
 
     closeModal();
     await fetchBeers();
+    await fetchBreweries(); // Refresh options if a new brewery was added
   } catch (err) {
     console.error('Form submission error:', err);
     modalError.textContent = err.message;
