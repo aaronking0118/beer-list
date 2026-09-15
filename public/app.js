@@ -85,7 +85,6 @@ function populateStyleFilter() {
   });
 }
 
-// Color gradient calculation for Rank (Red -> Yellow -> Green)
 function getRankColor(rank) {
   if (rank === null || rank === undefined || isNaN(rank)) return '#8a99ad';
   const clamped = Math.min(Math.max(Number(rank), 1), 5);
@@ -93,7 +92,6 @@ function getRankColor(rank) {
   return `hsl(${hue}, 85%, 55%)`;
 }
 
-// Render 5-Star Rating Element
 function renderStarRating(rank) {
   if (rank === null || rank === undefined || isNaN(rank)) return '<span style="color: #8a99ad;">N/A</span>';
   
@@ -158,7 +156,7 @@ function getBeerLiquidColor(beer) {
   return '#111111';
 }
 
-// Maps style to glassware type
+// Maps style to one of your 6 glassware types
 function getGlasswareTypeForStyle(styleName) {
   if (!styleName) return 'pint';
   const lower = styleName.toLowerCase();
@@ -175,22 +173,62 @@ function getGlasswareTypeForStyle(styleName) {
   if (lower.includes('belgian') || lower.includes('saison') || lower.includes('tripel') || lower.includes('quadrupel')) {
     return 'tulip';
   }
-  return 'pint';
+  if (lower.includes('märzen') || lower.includes('oktoberfest') || lower.includes('schwarzbier') || lower.includes('amber')) {
+    return 'stein';
+  }
+  return 'pint'; // Default fallback for IPAs, Pale Ales, Lagers, etc.
 }
 
-// Renders SVG Glassware graphic color-filled by liquid color
+// Renders the precise SVG template for each glassware style with dynamic color-fill
 function renderGlasswareSvg(beer) {
   const liquidColor = getBeerLiquidColor(beer);
-  const styleName = beer.style || beer.beer_style;
+  const styleName = beer.style || beer.beer_style || 'N/A';
+  const type = getGlasswareTypeForStyle(styleName);
   
+  let svgPaths = '';
+
+  if (type === 'weizen') {
+    svgPaths = `
+      <path fill="${liquidColor}" d="M7.2 7.5h9.6l-1.2 12a1.2 1.2 0 0 1-1.2 1.1H9.6a1.2 1.2 0 0 1-1.2-1.1L7.2 7.5z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M6.5 5.5h11l-1.5 14.5a2 2 0 0 1-2 1.8h-5a2 2 0 0 1-2-1.8L6.5 5.5zm-2-2h15v2h-15v-2zm3.5 18h8v1.5h-8v-1.5z" />
+      <path fill="#ffffff" opacity="0.85" d="M7 6h10v1.2H7z" />
+    `;
+  } else if (type === 'tulip') {
+    svgPaths = `
+      <path fill="${liquidColor}" d="M7.5 7.8c0-2.2 1.8-3.5 4.5-3.5s4.5 1.3 4.5 3.5c0 2-1 3.5-2 5.2l-1.2 8.2h-2.6l-1.2-8.2c-1-1.7-2-3.2-2-5.2z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M7.5 4c0-1.1.9-2 2-2h5c1.1 0 2 .9 2 2 0 1.5-.8 2.8-1.5 4-1.2 2-1.8 3.5-1.8 5.8v6.2h-3.4v-6.2c0-2.3-.6-3.8-1.8-5.8-.7-1.2-1.5-2.5-1.5-4zM6 21h12v1.5H6V21z" />
+      <path fill="#ffffff" opacity="0.85" d="M8.2 4.2h7.6v1H8.2z" />
+    `;
+  } else if (type === 'stein') {
+    svgPaths = `
+      <path fill="${liquidColor}" d="M6.5 6.5h11l-0.8 13.5a1 1 0 0 1-1 1h-7.4a1 1 0 0 1-1-1L6.5 6.5z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M5.5 5h13l-1 15.5a1.5 1.5 0 0 1-1.5 1.4h-8a1.5 1.5 0 0 1-1.5-1.4L5.5 5zm-2-2h17v2h-17V3zm4.5 3v14.5m4-14.5v14.5m4-14.5v14.5M5.5 21h13v1.5h-13V21zm12.5-11c2 0 3.5 1 3.5 3s-1.5 3-3.5 3" />
+      <path fill="#ffffff" opacity="0.85" d="M6 5.5h12v1.2H6z" />
+    `;
+  } else if (type === 'snifter') {
+    svgPaths = `
+      <path fill="${liquidColor}" d="M7 10h10a4.5 4.5 0 0 1-4.5 4.5h-1A4.5 4.5 0 0 1 7 10z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M8.5 6h7a5.5 5.5 0 0 1 5.5 5.5c0 3-2.5 5.5-5.5 5.5h-7C5.5 17 3 14.5 3 11.5A5.5 5.5 0 0 1 8.5 6zm-2-2h11v2h-11V4zm3.5 13h4v4h-4v-4zm-2 4h8v1.5h-8V21z" />
+      <path fill="#ffffff" opacity="0.85" d="M9 6.5h6v1H9z" />
+    `;
+  } else if (type === 'flute') {
+    svgPaths = `
+      <path fill="${liquidColor}" d="M8 5.5h8l-0.5 14.5H8.5L8 5.5z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M7.5 4h9l-0.6 16.2a1 1 0 0 1-1 0.8h-5.8a1 1 0 0 1-1-0.8L7.5 4zm-2-2h13v2h-13V2zm4.5 18h5v2.5h-5V20z" />
+      <path fill="#ffffff" opacity="0.85" d="M8 4.5h8v1H8z" />
+    `;
+  } else {
+    // Default standard Pint / Nonic glass
+    svgPaths = `
+      <path fill="${liquidColor}" d="M6 7.5h12l-1.2 12.5a1.2 1.2 0 0 1-1.2 1.1H8.4a1.2 1.2 0 0 1-1.2-1.1L6 7.5z" opacity="0.9" />
+      <path fill="none" stroke="#d3dfe9" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M5 5h14l-1.5 15a2 2 0 0 1-2 1.8H8.5a2 2 0 0 1-2-1.8L5 5zm-2-2h18v2H3V3zm3.5 18h11v1.5h-11V21z" />
+      <path fill="#ffffff" opacity="0.85" d="M5.5 5.8h13v1.2h-13z" />
+    `;
+  }
+
   return `
-    <svg class="glassware-icon" viewBox="0 0 24 24" width="28" height="28" style="shape-rendering: geometricPrecision; vertical-align: middle;" title="Style: ${escapeHtml(styleName || 'N/A')} | SRM: ${beer.srm ?? 'N/A'}">
-      <!-- Liquid Body -->
-      <path fill="${liquidColor}" d="M6 9h12l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H8.7a1.5 1.5 0 0 1-1.5-1.3L6 9z" opacity="0.9" />
-      <!-- Glass Outline -->
-      <path fill="none" stroke="#8a99ad" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" d="M5 6h14l-1.5 14a2 2 0 0 1-2 1.8H8.5a2 2 0 0 1-2-1.8L5 6zm-2-2h18v2H3V4z" />
-      <!-- Foam Head -->
-      <path fill="#ffffff" opacity="0.85" d="M5.5 7h13v1.5h-13z" />
+    <svg class="glassware-icon" viewBox="0 0 24 24" width="30" height="30" style="shape-rendering: geometricPrecision; vertical-align: middle;" title="Style: ${escapeHtml(styleName)} | Glass: ${type} | SRM: ${beer.srm ?? 'N/A'}">
+      ${svgPaths}
     </svg>
   `;
 }
@@ -260,7 +298,6 @@ function createBeerCardHtml(beer) {
   `;
 }
 
-// Open Detailed View Modal
 function openDetailModal(id) {
   const beer = beers.find(b => b.id === id);
   if (!beer) return;
@@ -273,7 +310,7 @@ function openDetailModal(id) {
     { label: 'Brewery', value: beer.brewery_name },
     { label: 'Style', value: beer.style || beer.beer_style },
     { label: 'Rank', value: beer.rank !== null && beer.rank !== undefined ? `${renderStarRating(beer.rank)}` : null, isHtml: true },
-    { label: 'Glassware / Color', value: renderGlasswareSvg(beer), isHtml: true },
+    { label: 'Glassware & Color', value: renderGlasswareSvg(beer), isHtml: true },
     { label: 'ABV', value: beer.abv ? `${Number(beer.abv).toFixed(2)}%` : null },
     { label: 'IBU', value: beer.ibu },
     { label: 'SRM', value: beer.srm },
